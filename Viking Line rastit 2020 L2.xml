@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="utf-8"?>
+<CourseData>
+  <IOFVersion version="2.0.3" />
+  <ModifyDate>
+    <Date>2020-09-06</Date>
+    <Clock>19:54</Clock>
+  </ModifyDate>
+  <Map>
+    <Scale>15000</Scale>
+    <MapPosition x="28.09" y="20.36" />
+  </Map>
+  <StartPoint>
+    <StartPointCode>STA1</StartPointCode>
+    <ControlPosition x="266675" y="6695107" />
+    <MapPosition x="55.54" y="-49.82" />
+  </StartPoint>
+  <Control>
+    <ControlCode>160</ControlCode>
+    <ControlPosition x="266850" y="6694965" />
+    <MapPosition x="68.81" y="-56.92" />
+  </Control>
+  <Control>
+    <ControlCode>RR5</ControlCode>
+    <ControlPosition x="266823" y="6694918" />
+    <MapPosition x="67.59" y="-60.36" />
+  </Control>
+  <Control>
+    <ControlCode>136</ControlCode>
+    <ControlPosition x="267030" y="6694856" />
+    <MapPosition x="81.98" y="-61.74" />
+  </Control>
+  <Control>
+    <ControlCode>143</ControlCode>
+    <ControlPosition x="267193" y="6694922" />
+    <MapPosition x="91.78" y="-55.36" />
+  </Control>
+  <Control>
+    <ControlCode>RR3</ControlCode>
+    <ControlPosition x="267179" y="6695166" />
+    <MapPosition x="87.75" y="-39.55" />
+  </Control>
+  <Control>
+    <ControlCode>156</ControlCode>
+    <ControlPosition x="267112" y="6695170" />
+    <MapPosition x="83.34" y="-40.18" />
+  </Control>
+  <Control>
+    <ControlCode>147</ControlCode>
+    <ControlPosition x="267033" y="6695269" />
+    <MapPosition x="76.93" y="-34.71" />
+  </Control>
+  <Control>
+    <ControlCode>122</ControlCode>
+    <ControlPosition x="267027" y="6695162" />
+    <MapPosition x="77.84" y="-41.77" />
+  </Control>
+  <Control>
+    <ControlCode>129</ControlCode>
+    <ControlPosition x="266929" y="6695169" />
+    <MapPosition x="71.39" y="-42.53" />
+  </Control>
+  <Control>
+    <ControlCode>RR2</ControlCode>
+    <ControlPosition x="266895" y="6695267" />
+    <MapPosition x="67.89" y="-36.56" />
+  </Control>
+  <Control>
+    <ControlCode>146</ControlCode>
+    <ControlPosition x="266853" y="6695380" />
+    <MapPosition x="63.7" y="-29.69" />
+  </Control>
+  <Control>
+    <ControlCode>144</ControlCode>
+    <ControlPosition x="266761" y="6695379" />
+    <MapPosition x="57.69" y="-30.94" />
+  </Control>
+  <Control>
+    <ControlCode>134</ControlCode>
+    <ControlPosition x="266736" y="6695322" />
+    <MapPosition x="56.8" y="-35.03" />
+  </Control>
+  <Control>
+    <ControlCode>RR1</ControlCode>
+    <ControlPosition x="266676" y="6695274" />
+    <MapPosition x="53.49" y="-38.94" />
+  </Control>
+  <Control>
+    <ControlCode>100</ControlCode>
+    <ControlPosition x="266542" y="6694943" />
+    <MapPosition x="48.91" y="-62.31" />
+  </Control>
+  <Control>
+    <ControlCode>139</ControlCode>
+    <ControlPosition x="266627" y="6694897" />
+    <MapPosition x="55.08" y="-64.18" />
+  </Control>
+  <Control>
+    <ControlCode>141</ControlCode>
+    <ControlPosition x="267175" y="6695371" />
+    <MapPosition x="84.87" y="-26.23" />
+  </Control>
+  <Control>
+    <ControlCode>112</ControlCode>
+    <ControlPosition x="267301" y="6695460" />
+    <MapPosition x="92.03" y="-18.82" />
+  </Control>
+  <Control>
+    <ControlCode>113</ControlCode>
+    <ControlPosition x="267412" y="6695367" />
+    <MapPosition x="100.48" y="-23.44" />
+  </Control>
+  <Control>
+    <ControlCode>116</ControlCode>
+    <ControlPosition x="266745" y="6695165" />
+    <MapPosition x="59.37" y="-45.2" />
+  </Control>
+  <Control>
+    <ControlCode>110</ControlCode>
+    <ControlPosition x="266780" y="6694947" />
+    <MapPosition x="64.41" y="-58.99" />
+  </Control>
+  <Control>
+    <ControlCode>124</ControlCode>
+    <ControlPosition x="267167" y="6694962" />
+    <MapPosition x="89.55" y="-53.07" />
+  </Control>
+  <Control>
+    <ControlCode>175</ControlCode>
+    <ControlPosition x="266774" y="6694721" />
+    <MapPosition x="66.9" y="-73.83" />
+  </Control>
+  <Control>
+    <ControlCode>RR4</ControlCode>
+    <ControlPosition x="267119" y="6694914" />
+    <MapPosition x="87.07" y="-56.83" />
+  </Control>
+  <FinishPoint>
+    <FinishPointCode>FIN1</FinishPointCode>
+    <ControlPosition x="265387" y="6694594" />
+    <MapPosition x="-22.23" y="-99.8" />
+  </FinishPoint>
+  <Course>
+    <CourseName>D10 H10</CourseName>
+    <CourseId>0</CourseId>
+    <CourseVariation>
+      <CourseVariationId>0</CourseVariationId>
+      <CourseLength>2800</CourseLength>
+      <StartPointCode>STA1</StartPointCode>
+      <CourseControl>
+        <Sequence>1</Sequence>
+        <ControlCode>144</ControlCode>
+        <LegLength>285</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>2</Sequence>
+        <ControlCode>122</ControlCode>
+        <LegLength>343</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>3</Sequence>
+        <ControlCode>143</ControlCode>
+        <LegLength>292</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>4</Sequence>
+        <ControlCode>136</ControlCode>
+        <LegLength>175</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>5</Sequence>
+        <ControlCode>110</ControlCode>
+        <LegLength>267</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>6</Sequence>
+        <ControlCode>100</ControlCode>
+        <LegLength>238</LegLength>
+      </CourseControl>
+      <FinishPointCode>FIN1</FinishPointCode>
+      <DistanceToFinish>1206</DistanceToFinish>
+    </CourseVariation>
+  </Course>
+  <Course>
+    <CourseName>D12 H12</CourseName>
+    <CourseId>1</CourseId>
+    <CourseVariation>
+      <CourseVariationId>0</CourseVariationId>
+      <CourseLength>3100</CourseLength>
+      <StartPointCode>STA1</StartPointCode>
+      <CourseControl>
+        <Sequence>1</Sequence>
+        <ControlCode>144</ControlCode>
+        <LegLength>285</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>2</Sequence>
+        <ControlCode>147</ControlCode>
+        <LegLength>294</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>3</Sequence>
+        <ControlCode>141</ControlCode>
+        <LegLength>174</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>4</Sequence>
+        <ControlCode>124</ControlCode>
+        <LegLength>409</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>5</Sequence>
+        <ControlCode>136</ControlCode>
+        <LegLength>173</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>6</Sequence>
+        <ControlCode>160</ControlCode>
+        <LegLength>210</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>7</Sequence>
+        <ControlCode>100</ControlCode>
+        <LegLength>309</LegLength>
+      </CourseControl>
+      <FinishPointCode>FIN1</FinishPointCode>
+      <DistanceToFinish>1206</DistanceToFinish>
+    </CourseVariation>
+  </Course>
+  <Course>
+    <CourseName>D13 H13</CourseName>
+    <CourseId>2</CourseId>
+    <CourseVariation>
+      <CourseVariationId>0</CourseVariationId>
+      <CourseLength>3600</CourseLength>
+      <StartPointCode>STA1</StartPointCode>
+      <CourseControl>
+        <Sequence>1</Sequence>
+        <ControlCode>134</ControlCode>
+        <LegLength>223</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>2</Sequence>
+        <ControlCode>122</ControlCode>
+        <LegLength>331</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>3</Sequence>
+        <ControlCode>141</ControlCode>
+        <LegLength>256</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>4</Sequence>
+        <ControlCode>112</ControlCode>
+        <LegLength>155</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>5</Sequence>
+        <ControlCode>113</ControlCode>
+        <LegLength>145</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>6</Sequence>
+        <ControlCode>156</ControlCode>
+        <LegLength>359</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>7</Sequence>
+        <ControlCode>124</ControlCode>
+        <LegLength>215</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>8</Sequence>
+        <ControlCode>136</ControlCode>
+        <LegLength>173</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>9</Sequence>
+        <ControlCode>139</ControlCode>
+        <LegLength>405</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>10</Sequence>
+        <ControlCode>100</ControlCode>
+        <LegLength>97</LegLength>
+      </CourseControl>
+      <FinishPointCode>FIN1</FinishPointCode>
+      <DistanceToFinish>1206</DistanceToFinish>
+    </CourseVariation>
+  </Course>
+  <Course>
+    <CourseName>D14 H14</CourseName>
+    <CourseId>3</CourseId>
+    <CourseVariation>
+      <CourseVariationId>0</CourseVariationId>
+      <CourseLength>4000</CourseLength>
+      <StartPointCode>STA1</StartPointCode>
+      <CourseControl>
+        <Sequence>1</Sequence>
+        <ControlCode>144</ControlCode>
+        <LegLength>285</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>2</Sequence>
+        <ControlCode>146</ControlCode>
+        <LegLength>92</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>3</Sequence>
+        <ControlCode>147</ControlCode>
+        <LegLength>212</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>4</Sequence>
+        <ControlCode>112</ControlCode>
+        <LegLength>329</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>5</Sequence>
+        <ControlCode>113</ControlCode>
+        <LegLength>145</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>6</Sequence>
+        <ControlCode>156</ControlCode>
+        <LegLength>359</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>7</Sequence>
+        <ControlCode>116</ControlCode>
+        <LegLength>367</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>8</Sequence>
+        <ControlCode>160</ControlCode>
+        <LegLength>226</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>9</Sequence>
+        <ControlCode>136</ControlCode>
+        <LegLength>210</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>10</Sequence>
+        <ControlCode>175</ControlCode>
+        <LegLength>290</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>11</Sequence>
+        <ControlCode>139</ControlCode>
+        <LegLength>229</LegLength>
+      </CourseControl>
+      <CourseControl>
+        <Sequence>12</Sequence>
+        <ControlCode>100</ControlCode>
+        <LegLength>97</LegLength>
+      </CourseControl>
+      <FinishPointCode>FIN1</FinishPointCode>
+      <DistanceToFinish>1206</DistanceToFinish>
+    </CourseVariation>
+  </Course>
+</CourseData>
