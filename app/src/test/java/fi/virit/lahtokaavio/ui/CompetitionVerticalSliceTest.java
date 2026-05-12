@@ -92,6 +92,27 @@ class CompetitionVerticalSliceTest implements TesterWrappers {
     }
 
     @Test
+    void ganttFirstStartTimesMatchTheWorkspacePlan() {
+        // Regression: the Gantt view recomputes positions from its own
+        // LanePlan offsets, so the offset minutes it gets passed must
+        // already include the planner's soft-start stagger. Otherwise the
+        // Gantt would show e.g. STA1-8 starting at 11:01 while the table
+        // view (which reads SeriesStart.firstStartTime directly) shows
+        // 11:21. This test pins them together.
+        loadSampleDataAndGenerate();
+        GanttView view = ext.navigate(GanttView.class);
+        in.virit.vlp.VisualLanePlanner planner = view.planner();
+
+        for (fi.virit.lahtokaavio.domain.SeriesStart s
+                : CompetitionWorkspace.current().plan().seriesStarts()) {
+            java.time.LocalTime ganttTime = planner.firstStartOf(s.seriesName());
+            assertThat(ganttTime)
+                    .as("Gantt first start of %s should match the plan grid", s.seriesName())
+                    .isEqualTo(s.firstStartTime());
+        }
+    }
+
+    @Test
     void ganttMenuActionMovesSeriesToTargetLane() {
         loadSampleDataAndGenerate();
 

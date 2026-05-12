@@ -49,6 +49,15 @@ import java.util.Map;
 @org.springframework.stereotype.Component
 public final class StartPlanGenerator {
 
+    /**
+     * Upper bound for the per-lane soft-start delay. The aim of soft start
+     * is to relieve pressure at minute zero — staggering lanes within the
+     * same offset minute so they don't all fire together — without pushing
+     * shorter lanes into a long, empty late stretch. Capping the delay at
+     * a few minutes keeps everything front-loaded.
+     */
+    private static final int MAX_LANE_START_DELAY_MINUTES = 20;
+
     public StartPlan generate(List<Series> series, CompetitionParameters parameters) {
         Map<StartPlace, List<Series>> seriesByStartPlace = new LinkedHashMap<>();
         for (Series s : series) {
@@ -278,16 +287,28 @@ public final class StartPlanGenerator {
                                    int gcd,
                                    CompetitionParameters parameters,
                                    List<SeriesStart> output) {
-        int globalLastSlot = 0;
-        for (int free : nextFreeSlot) {
-            if (free > 0) {
-                globalLastSlot = Math.max(globalLastSlot, free - 1);
+        // Anchor each offset group on its own longest lane: that lane fires
+        // immediately at its offset minute (no delay), guaranteeing every
+        // offset minute has a starter going from the very first tick. Other
+        // lanes within the same offset get a capped stagger so they don't
+        // all fire together at minute zero. Empty minutes at the END of the
+        // shorter offset group are OK — the spec prefers a busy start over
+        // a busy finish.
+        int[] longestPerOffset = new int[gcd];
+        for (int i = 0; i < nextFreeSlot.length; i++) {
+            if (nextFreeSlot[i] > 0) {
+                int offset = i / lanesPerMinute;
+                longestPerOffset[offset] = Math.max(longestPerOffset[offset],
+                        nextFreeSlot[i] - 1);
             }
         }
+        int maxDelaySlots = MAX_LANE_START_DELAY_MINUTES / Math.max(1, gcd);
         int[] shiftByLane = new int[nextFreeSlot.length];
         for (int i = 0; i < nextFreeSlot.length; i++) {
             if (nextFreeSlot[i] > 0) {
-                shiftByLane[i] = globalLastSlot - (nextFreeSlot[i] - 1);
+                int offset = i / lanesPerMinute;
+                int slack = longestPerOffset[offset] - (nextFreeSlot[i] - 1);
+                shiftByLane[i] = Math.min(slack, maxDelaySlots);
             }
         }
 

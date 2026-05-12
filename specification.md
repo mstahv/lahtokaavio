@@ -26,7 +26,13 @@ Näiden perusteella ohjelma luo ensimmäisen ehdotuksen optimaalisesta lähtöj�
 
 Toissijainen tavoite on **pitää lähdön kuormitus mahdollisimman tasaisena läpi koko kisan**: lyhyitä ykkösrastikoreja yhdistetään samalle jonolle (eri ykkösrastit voivat jakaa jonon vapaasti), niin että jonoja on mahdollisimman vähän mutta ne ovat kaikki suunnilleen yhtä pitkiä. Pakkaus tehdään **Best-Fit-Decreasing** -heuristiikalla: suurin kori menee omalle jonolleen, ja pienemmät kasataan sen mittaisille rinnakkaisille jonoille. Lopullinen virtuaalijonojen joukko jaetaan fyysisille jonopaikoille **offset-minuuttien yli vuorotellen** (esim. parit ja parittomat minuutit), jolloin lähdön kapasiteettia käytetään tasaisesti joka minuutti.
 
-Soft start -vaiheessa jokaista jonoa siirretään myöhemmäksi sen verran, että kaikki ei-tyhjät jonot päättyvät yhtä aikaa (offset-minuutin sisällä). Yhdessä tuloksena on, että lähtijät tihkuvat metsään koko kilpailun ajan suunnilleen samalla tahdilla, eikä ensimmäisillä minuuteilla synny ruuhkahuippua eikä viimeisillä minuuteilla yksinäistä jälkijonoa.
+Soft start -vaiheen tarkoitus on **helpottaa lähtötoimitsijoiden työtä kisan alussa**: kaikki jonot eivät käynnisty täydellä teholla minuutilla nolla. Soft start ankkuroituu **per offset-ryhmä**:
+
+- Kunkin offset-ryhmän **pisin jono lähtee heti omasta offset-minuutistaan** (offset 0 → 11:00, offset 1 → 11:01) — näin jokaisella lähtöminuutilla on lähtijä heti ensimmäisestä tikistä asti. Lähtötoimitsijoiden työtahti pysyy heti nominaalisena eikä kisan alkuun synny "kuolleita minuutteja".
+- Saman offset-ryhmän **lyhyemmät jonot porrastetaan myöhempään** niiden oman offset-anchorin sisäisen slackin mukaan, enintään **20 minuuttia**.
+- "Tyhjiä lähtöminuutteja" saa esiintyä **kisan lopussa** — lyhyemmän offset-ryhmän jonot ehtivät päättyä ennen pitempää offset-ryhmää, ja se on ok (lähtötoimitsijoita helpotetaan etenkin kisan alkuvaiheessa, joka on stressaavin).
+
+Käytännössä: shift_i = min(longestSlotInOffset_i − laneSlot_i, 20 min). Pisimmälle jonolle kussakin offset-ryhmässä shift=0 → starttaa heti offset-minuutilla. Lyhyempi jono samassa offsetissa saa 4–20 min viiveen. Eri offset-ryhmien jonot eivät vaikuta toisiinsa.
 
 Sarjakohtaiset lähtövälit voivat vaihdella samassa lähdössä (esim. eliittisarja 1 min, muut 2 min). Lane-aikaruudukon askel on tällöin lähdössä esiintyvien lähtövälien GCD, ja jokainen sarja askeltaa jonossa eteenpäin omalla välillään (sarjan väli / GCD slottia per lähtijä). Käytännössä tämä pitää kapasiteettirajoituksen (max lähtijää/minuutti) voimassa myös sekoittuneilla väleillä.
 

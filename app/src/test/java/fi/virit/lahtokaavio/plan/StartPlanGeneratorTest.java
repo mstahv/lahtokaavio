@@ -176,6 +176,33 @@ class StartPlanGeneratorTest {
     }
 
     @Test
+    void softStartCapsLaneDelayAtTwentyMinutesEvenWithBigSlack() {
+        // One long series (40 starters at 2 min interval = 78 slots filled
+        // → makespan minute 78×2=… well actually 39 starters means 39*2 = 78
+        // … but we just care about relative slack). One tiny series gets a
+        // separate lane (different first control) and would, under "align
+        // ends" soft start, get shifted all the way to the end of the long
+        // lane. The new cap should hold its delay to 20 min so it fires
+        // front-half of the competition.
+        CompetitionParameters params = CompetitionParameters.defaults();
+        List<Series> series = List.of(
+                new Series("LONG", courseWithControl("STA1", "A"), 40, 2),
+                new Series("SHORT", courseWithControl("STA1", "B"), 2, 2));
+
+        StartPlan plan = generator.generate(series, params);
+        java.time.LocalTime shortFirst = plan.seriesStarts().stream()
+                .filter(s -> s.seriesName().equals("SHORT"))
+                .map(SeriesStart::firstStartTime).findFirst().orElseThrow();
+        java.time.LocalTime longFirst = plan.seriesStarts().stream()
+                .filter(s -> s.seriesName().equals("LONG"))
+                .map(SeriesStart::firstStartTime).findFirst().orElseThrow();
+
+        // SHORT delayed at most 20 minutes past its lane's own offset start.
+        long delayMin = java.time.Duration.between(longFirst, shortFirst).toMinutes();
+        assertThat(delayMin).isBetween(0L, 21L); // +1 min tolerance for lane offset diff
+    }
+
+    @Test
     void smallBucketsAreCombinedToReducePeakConcurrency() {
         // One big bucket (10) + four small ones (1 each). Old LPT would open
         // five lanes; BFD packs all four small buckets onto a single lane
@@ -199,12 +226,13 @@ class StartPlanGeneratorTest {
     }
 
     @Test
-    void softStartAlignsLaneEndsWithinGcdMinutesAndShiftsShorterLanesLater() {
-        // Three series with their own first control → BFD makes the longest
-        // one set the makespan target, the shorter ones either share a lane
-        // (when they fit) or get their own. Soft start aligns every used
-        // lane's end to the global last slot; physical offset minutes can
-        // still split the absolute last-start by up to (gcd-1) minutes.
+    void softStartAnchorsLongestLaneInEachOffsetGroupAtItsOffsetMinute() {
+        // Three series with their own first controls → BFD spreads each
+        // onto its own lane. With zigzag offset distribution: A → offset 0,
+        // B → offset 1, C → offset 0. The longest in each offset group
+        // should fire at its offset minute (the very first tick), so the
+        // start crew sees a starter on both odd and even minutes from the
+        // start of the competition.
         CompetitionParameters params = CompetitionParameters.defaults();
         List<Series> series = List.of(
                 new Series("A", courseWithControl("STA1", "A"), 10, 2),
@@ -213,19 +241,16 @@ class StartPlanGeneratorTest {
 
         StartPlan plan = generator.generate(series, params);
 
-        // Last starts fall within a single offset-minute spread (gcd = 2 → ≤ 1 min).
-        java.time.LocalTime minLast = plan.seriesStarts().stream()
-                .map(SeriesStart::lastStartTime).min(java.time.LocalTime::compareTo).orElseThrow();
-        java.time.LocalTime maxLast = plan.seriesStarts().stream()
-                .map(SeriesStart::lastStartTime).max(java.time.LocalTime::compareTo).orElseThrow();
-        assertThat(java.time.Duration.between(minLast, maxLast).toMinutes()).isLessThanOrEqualTo(1);
-
-        // Shorter series gets the later first start (soft start property).
-        java.util.Map<String, java.time.LocalTime> firstByName = plan.seriesStarts().stream()
+        java.util.Map<String, SeriesStart> byName = plan.seriesStarts().stream()
                 .collect(java.util.stream.Collectors.toMap(
-                        SeriesStart::seriesName, SeriesStart::firstStartTime));
-        assertThat(firstByName.get("A")).isBeforeOrEqualTo(firstByName.get("B"));
-        assertThat(firstByName.get("B")).isBeforeOrEqualTo(firstByName.get("C"));
+                        SeriesStart::seriesName, s -> s));
+
+        // A is the longest overall → offset 0, starts at 11:00.
+        assertThat(byName.get("A").firstStartTime()).isEqualTo(java.time.LocalTime.of(11, 0));
+        // B is the longest within its offset (offset 1) → starts at 11:01.
+        assertThat(byName.get("B").firstStartTime()).isEqualTo(java.time.LocalTime.of(11, 1));
+        // C shares offset 0 with A but is shorter → gets a capped delay.
+        assertThat(byName.get("C").firstStartTime()).isAfter(byName.get("A").firstStartTime());
     }
 
     private Course course(String name, String startPlaceCode) {

@@ -71,14 +71,28 @@ public class GanttView extends VerticalLayout implements BeforeEnterObserver {
     private LanePlan toLanePlan(StartPlan plan) {
         controlsBySeries.clear();
         CompetitionParameters params = plan.parameters();
-        Map<String, Integer> laneOffsets = new LinkedHashMap<>();
         TreeSet<String> laneIdsSorted =
                 new TreeSet<>(fi.virit.lahtokaavio.plan.StartPlanGenerator.LANE_ID_NATURAL);
 
         for (SeriesStart s : plan.seriesStarts()) {
             laneIdsSorted.add(s.laneId());
-            laneOffsets.put(s.laneId(), laneOffsetMinutes(s.laneId(), params));
             controlsBySeries.put(s.seriesName(), s.controlCodes());
+        }
+
+        // Per-lane offset: take the actual first start time of the lane's
+        // earliest series. This bakes in the soft-start delay the planner
+        // already applied, so the Gantt visualisation matches the plan grid
+        // exactly. Pure laneIndex/maxPerMin would only show the rhythmic
+        // offset (0 or 1 min) and miss the staggered start.
+        Map<String, Integer> laneOffsets = new LinkedHashMap<>();
+        for (String laneId : laneIdsSorted) {
+            java.time.LocalTime earliestInLane = plan.seriesStarts().stream()
+                    .filter(s -> s.laneId().equals(laneId))
+                    .map(SeriesStart::firstStartTime)
+                    .min(java.time.LocalTime::compareTo)
+                    .orElse(params.firstStart());
+            laneOffsets.put(laneId,
+                    (int) java.time.Duration.between(params.firstStart(), earliestInLane).toMinutes());
         }
 
         Map<String, List<LaneItem>> grouped = new LinkedHashMap<>();
@@ -133,17 +147,4 @@ public class GanttView extends VerticalLayout implements BeforeEnterObserver {
                 firstControl, tooltipExtra);
     }
 
-    private static int laneOffsetMinutes(String laneId, CompetitionParameters params) {
-        int dash = laneId.lastIndexOf('-');
-        if (dash < 0) {
-            return 0;
-        }
-        try {
-            int laneIndex = Integer.parseInt(laneId.substring(dash + 1)) - 1;
-            int lanesPerMinute = Math.max(1, params.maxStartersPerMinutePerStartPlace());
-            return laneIndex / lanesPerMinute;
-        } catch (NumberFormatException e) {
-            return 0;
-        }
-    }
 }
