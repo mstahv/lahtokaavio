@@ -3,6 +3,8 @@ package fi.virit.lahtokaavio.io;
 import fi.virit.lahtokaavio.domain.SeriesStart;
 import fi.virit.lahtokaavio.domain.StartPlan;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
@@ -22,14 +24,25 @@ public final class StartPlanCsvWriter {
     private static final String HEADER =
             "Sarja;Ensimmäinen lähtö;Viimeinen lähtö;Jono;Rastikoodit";
 
-    public byte[] writeBytes(StartPlan plan) {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
+    public void writeBytes(StartPlan plan, OutputStream out) throws IOException {
         try (Writer writer = new OutputStreamWriter(out, StandardCharsets.UTF_8)) {
             write(plan, writer);
         } catch (java.io.IOException e) {
             throw new IllegalStateException("Failed to write start plan CSV", e);
         }
-        return out.toByteArray();
+    }
+
+    private static String joinControlCodes(SeriesStart row) {
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (int code : row.controlCodes()) {
+            if (!first) {
+                sb.append(CONTROL_SEPARATOR);
+            }
+            sb.append(code);
+            first = false;
+        }
+        return sb.toString();
     }
 
     public void write(StartPlan plan, Writer writer) throws java.io.IOException {
@@ -44,7 +57,7 @@ public final class StartPlanCsvWriter {
             writer.write(DELIMITER);
             writer.write(row.laneId());
             writer.write(DELIMITER);
-            writer.write(String.join(CONTROL_SEPARATOR, row.controlCodes()));
+            writer.write(joinControlCodes(row));
             writer.write('\n');
         }
     }

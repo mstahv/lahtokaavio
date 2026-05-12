@@ -2,6 +2,7 @@ package fi.virit.lahtokaavio.ui;
 
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
@@ -13,6 +14,8 @@ import fi.virit.lahtokaavio.domain.StartPlan;
 import in.virit.vlp.LaneItem;
 import in.virit.vlp.LanePlan;
 import in.virit.vlp.VisualLanePlanner;
+import org.vaadin.firitin.appframework.MenuItem;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -25,7 +28,8 @@ import java.util.TreeSet;
  * {@link CompetitionWorkspace}. Translates {@link SeriesStart} ↔ {@link LaneItem}
  * at the view boundary so the add-on stays domain-agnostic.
  */
-@PageTitle("Lähtökaavio – arrangement")
+@PageTitle("Lähtökaavio")
+@MenuItem(icon = VaadinIcon.RECYCLE)
 @Route(registerAtStartup = false, layout = TopLayout.class)
 public class GanttView extends VerticalLayout implements BeforeEnterObserver {
 
@@ -33,11 +37,11 @@ public class GanttView extends VerticalLayout implements BeforeEnterObserver {
 
     private final VisualLanePlanner planner = new VisualLanePlanner();
     /** Side-map: series name → its course controls, used when we rebuild a StartPlan. */
-    private final Map<String, List<String>> controlsBySeries = new LinkedHashMap<>();
+    private final Map<String, List<Integer>> controlsBySeries = new LinkedHashMap<>();
 
     public GanttView() {
         setSizeFull();
-        add(new H2("Arrangement"));
+        add(new H2("Lähtökaavio"));
         add(new Paragraph(
                 "Drag a series onto another lane, or use the … menu on the series box. "
                 + "Lanes are re-timed automatically. Use Re-optimize from the entry view "
@@ -139,12 +143,12 @@ public class GanttView extends VerticalLayout implements BeforeEnterObserver {
      * physical start point a series uses.
      */
     private LaneItem toLaneItem(SeriesStart s) {
-        String firstControl = s.controlCodes().isEmpty() ? null : s.controlCodes().getFirst();
+        Integer firstControl = s.controlCodes().isEmpty() ? null : s.controlCodes().getFirst();
         String tooltipExtra = firstControl != null ? "first control: " + firstControl : null;
         return new LaneItem(
                 s.seriesName(), s.laneId(), s.seriesName(),
                 s.startIntervalMinutes(), s.competitors(),
-                firstControl, tooltipExtra);
+                firstControl != null ? firstControl : 0, tooltipExtra);
     }
 
 }

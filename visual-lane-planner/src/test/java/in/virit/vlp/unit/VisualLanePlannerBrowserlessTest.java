@@ -51,9 +51,9 @@ class VisualLanePlannerBrowserlessTest implements TesterWrappers {
                 java.util.List.of("LANE-1", "LANE-2"),
                 java.util.Map.of("LANE-1", 0, "LANE-2", 0),
                 java.util.List.of(
-                        new in.virit.vlp.LaneItem("a", "LANE-1", "A", 2, 3, "CTRL-144", null),
-                        new in.virit.vlp.LaneItem("b", "LANE-2", "B", 2, 3, "CTRL-144", null),
-                        new in.virit.vlp.LaneItem("c", "LANE-1", "C", 2, 3, "CTRL-100", null))),
+                        new in.virit.vlp.LaneItem("a", "LANE-1", "A", 2, 3, 144, null),
+                        new in.virit.vlp.LaneItem("b", "LANE-2", "B", 2, 3, 144, null),
+                        new in.virit.vlp.LaneItem("c", "LANE-1", "C", 2, 3, 100, null))),
                 p -> { });
 
         String colorA = ext.$(Div.class).withAttribute("data-item", "a").single()

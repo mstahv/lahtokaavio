@@ -10,10 +10,10 @@ import java.io.UncheckedIOException;
  */
 public final class SampleData {
 
-    public static final String COURSES_L1 = "/Viking-Line-L1.xml";
-    public static final String COURSES_L2 = "/Viking-Line-L2.xml";
-    public static final String COURSES_RRTR = "/Viking-Line-RRTR.xml";
-    public static final String REGISTRATIONS = "/ilmoittautumiset.csv";
+    public static final String COURSES_L1 = "/demo/Viking-Line-L1.xml";
+    public static final String COURSES_L2 = "/demo/Viking-Line-L2.xml";
+    public static final String COURSES_RRTR = "/demo/Viking-Line-RRTR.xml";
+    public static final String REGISTRATIONS = "/demo/ilmoittautumiset.csv";
 
     private SampleData() {
     }

@@ -73,7 +73,7 @@ class StartPlanGeneratorTest {
         // forces them all onto one lane (10 starters back-to-back). Splitting
         // mode is allowed to spread them across two parallel lanes (offset 0
         // and offset 1), so the longest queue ends roughly half as far out.
-        Course shared = new Course("c", new StartPlace("STA1"), List.of("144", "100"));
+        Course shared = new Course("c", new StartPlace("STA1"), List.of(144, 100));
         List<Series> series = java.util.stream.IntStream.rangeClosed(1, 10)
                 .mapToObj(i -> new Series("S" + i, shared, 1, 2))
                 .toList();
@@ -132,9 +132,9 @@ class StartPlanGeneratorTest {
     @Test
     void seriesSharingFirstControlEndUpOnSameLane() {
         Course shared = new Course("shared", new StartPlace("STA1"),
-                List.of("144", "100", "101"));
+                List.of(144, 100, 101));
         Course other = new Course("other", new StartPlace("STA1"),
-                List.of("160", "100"));
+                List.of(160, 100));
         List<Series> series = List.of(
                 new Series("D10", shared, 2, 2),
                 new Series("H14", shared, 3, 2),
@@ -254,11 +254,17 @@ class StartPlanGeneratorTest {
     }
 
     private Course course(String name, String startPlaceCode) {
-        return new Course(name, new StartPlace(startPlaceCode), List.of("100", "101"));
+        return new Course(name, new StartPlace(startPlaceCode), List.of(100, 101));
     }
 
+    /**
+     * Test helper: encodes the symbolic {@code firstControl} key (e.g. "A",
+     * "k3") into a unique int so the planner can still group by first
+     * control. Stable hashing keeps the same key → same bucket across runs.
+     */
     private Course courseWithControl(String startPlaceCode, String firstControl) {
+        int code = Math.abs(firstControl.hashCode()) % 9000 + 1000;
         return new Course("c-" + firstControl, new StartPlace(startPlaceCode),
-                List.of(firstControl, "100"));
+                List.of(code, 100));
     }
 }

@@ -362,8 +362,8 @@ public final class StartPlanGenerator {
     }
 
     private String firstControlOf(Series s) {
-        List<String> controls = s.course().controlCodes();
-        return controls.isEmpty() ? "__none__:" + s.name() : controls.getFirst();
+        List<Integer> controls = s.course().controlCodes();
+        return controls.isEmpty() ? "__none__:" + s.name() : controls.getFirst().toString();
     }
 
     /**

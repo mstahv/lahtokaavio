@@ -62,26 +62,17 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
     private static final Color DROP_INDICATOR_FILL = NamedColor.DODGERBLUE;
 
     /**
-     * Picks a stable background colour for an item. When the caller provides
-     * a {@code colorKey} (e.g. orienteering's first control code), every item
-     * sharing that key gets the same colour — so the user can spot at a glance
-     * which series compete for the same first slot. Without a key we fall
-     * back to the item's id, giving each entry a unique hue.
+     * Picks a stable background colour for an item. Items sharing the same
+     * {@code colorKey} get the same colour — so the user can spot at a glance
+     * which series compete for the same first slot.
      *
-     * <p>The hash is scrambled through a SplitMix64-style bit mixer before
-     * folding to {@code [0,360)}: a plain {@code hashCode() % 360} on numeric
-     * codes like "165" / "169" lands their hues only a few degrees apart,
-     * making the boxes look near-identical. Mixing the bits spreads adjacent
-     * inputs across the wheel without us actively searching for distant hues.
+     * <p>The stride of 71° is coprime with 360, so adjacent numeric keys
+     * (e.g. control codes 164 and 165) land roughly a quarter of the wheel
+     * apart instead of looking near-identical.
      */
     private static Color colorFor(LaneItem item) {
-        String key = item.colorKey() != null ? item.colorKey() : item.id();
-        long h = key.hashCode();
-        h = (h ^ (h >>> 33)) * 0xff51afd7ed558ccdL;
-        h = (h ^ (h >>> 33)) * 0xc4ceb9fe1a85ec53L;
-        h = h ^ (h >>> 33);
-        int hue = Math.floorMod((int) h, 360);
-        return new HslColor(hue, 65, 78);
+        int h = Math.floorMod(item.colorKey() * 33, 360);
+        return new HslColor(h, 65, 78);
     }
 
     private LanePlan plan;
@@ -588,21 +579,20 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
         }
 
         private void addMoveBefore(LaneItem item) {
+            // Only siblings in the same lane: cross-lane moves already have
+            // their own "Move to lane" entry, and listing every item in
+            // every lane made the submenu overwhelming.
+            List<LaneItem> sameLane = byLane.getOrDefault(item.laneId(), List.of());
             MenuItem parent = addItem("Move before");
-            for (Map.Entry<String, List<LaneItem>> e : byLane.entrySet()) {
-                String laneId = e.getKey();
-                List<LaneItem> lane = e.getValue();
-                for (int i = 0; i < lane.size(); i++) {
-                    LaneItem target = lane.get(i);
-                    if (target.id().equals(item.id())) {
-                        continue;
-                    }
-                    int index = i;
-                    MenuItem entry = parent.getSubMenu().addItem(
-                            target.label() + " (" + laneId + ")",
-                            ev -> moveItem(item.id(), laneId, index));
-                    entry.getElement().setAttribute("data-before-item", target.id());
+            for (int i = 0; i < sameLane.size(); i++) {
+                LaneItem target = sameLane.get(i);
+                if (target.id().equals(item.id())) {
+                    continue;
                 }
+                int index = i;
+                MenuItem entry = parent.getSubMenu().addItem(target.label(),
+                        ev -> moveItem(item.id(), item.laneId(), index));
+                entry.getElement().setAttribute("data-before-item", target.id());
             }
         }
     }

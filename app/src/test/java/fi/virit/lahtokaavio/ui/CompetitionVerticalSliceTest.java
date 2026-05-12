@@ -38,6 +38,10 @@ class CompetitionVerticalSliceTest implements TesterWrappers {
     void uploadGenerateDownload() {
         loadSampleDataAndGenerate();
 
+        // Generation lands the user on the Gantt view; the grid + download
+        // anchors live on PlanView (the "Grid" tab in the top menu).
+        ext.navigate(GridAndDownloadView.class);
+
         @SuppressWarnings("unchecked")
         Grid<SeriesStart> grid = (Grid<SeriesStart>) ext.$(Grid.class).single();
         long rowsInData = grid.getDataProvider().size(new com.vaadin.flow.data.provider.Query<>());
@@ -68,18 +72,20 @@ class CompetitionVerticalSliceTest implements TesterWrappers {
         assertThat(CompetitionWorkspace.current().parameters().firstStart()).isEqualTo(newTime);
 
         // And it survives the JSON snapshot round-trip.
-        byte[] json = new fi.virit.lahtokaavio.io.WorkspaceJsonWriter()
-                .writeBytes(CompetitionWorkspace.current().snapshot());
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        new tools.jackson.databind.ObjectMapper()
+                .writeValue(bout, CompetitionWorkspace.current().snapshot());
         var snapshot = new fi.virit.lahtokaavio.io.WorkspaceJsonReader()
-                .read(new java.io.ByteArrayInputStream(json));
+                .read(new java.io.ByteArrayInputStream(bout.toByteArray()));
         assertThat(snapshot.parameters().firstStart()).isEqualTo(newTime);
     }
 
     @Test
     void planViewOffersJsonDownloadThatRoundTrips() {
         loadSampleDataAndGenerate();
+        ext.navigate(GridAndDownloadView.class);
 
-        byte[] json = downloadBytes("Download JSON (resumable)");
+        byte[] json = downloadBytes("Download Backup (JSON)");
         assertThat(json).isNotEmpty();
         String text = new String(json, StandardCharsets.UTF_8);
         assertThat(text).contains("\"seriesStarts\"").contains("\"firstStart\"");
@@ -153,6 +159,7 @@ class CompetitionVerticalSliceTest implements TesterWrappers {
     @Test
     void editingACountReshapesThePlan() {
         loadSampleDataAndGenerate();
+        ext.navigate(GridAndDownloadView.class);
 
         String csvBefore = downloadCsv();
         java.time.LocalTime lastStartBefore = latestLastStart(csvBefore);
@@ -176,11 +183,11 @@ class CompetitionVerticalSliceTest implements TesterWrappers {
     private void loadSampleDataAndGenerate() {
         ext.navigate(CompetitionView.class);
 
-        List<Upload> uploads = ext.$(Upload.class).all();
-        // setup wizard has three uploads: courses XML, registrations CSV, resume JSON
-        assertThat(uploads).hasSize(3);
-        UploadTester<Upload> coursesUpload = test(uploads.get(0));
-        UploadTester<Upload> registrationsUpload = test(uploads.get(1));
+        // Phase 1 — three options. Use Option A: drop in courses + registrations.
+        List<Upload> phase1Uploads = ext.$(Upload.class).all();
+        assertThat(phase1Uploads).hasSize(3);
+        UploadTester<Upload> coursesUpload = test(phase1Uploads.get(0));
+        UploadTester<Upload> registrationsUpload = test(phase1Uploads.get(1));
 
         coursesUpload.upload("Viking-Line-L1.xml", "text/xml",
                 SampleData.read(SampleData.COURSES_L1));
@@ -191,11 +198,16 @@ class CompetitionVerticalSliceTest implements TesterWrappers {
         registrationsUpload.upload("ilmoittautumiset.csv", "text/csv",
                 SampleData.read(SampleData.REGISTRATIONS));
 
+        // The Continue button moves the wizard from Phase 1 to Phase 2.
+        Button continueButton = ext.$(Button.class).withText("Continue").single();
+        test(continueButton).click();
+
+        // Phase 2 — pick the competition day and trigger generation.
         ComboBox<String> daySelector = ext.$(ComboBox.class).first();
         ComboBoxTester<ComboBox<String>, String> dayTester = test(daySelector);
         dayTester.selectItem("Päivä #1");
 
-        Button generate = ext.$(Button.class).withText("Generate start plan").single();
+        Button generate = ext.$(Button.class).withText("Generate Initial Start Plan").single();
         test(generate).click();
     }
 

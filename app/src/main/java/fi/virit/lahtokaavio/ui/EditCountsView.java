@@ -4,6 +4,7 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -11,6 +12,8 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import org.vaadin.firitin.appframework.MenuItem;
+
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +23,8 @@ import java.util.Map;
  * been generated. Editing only resizes queues (lanes themselves are kept) and
  * triggers a regenerate via {@link CompetitionWorkspace}.
  */
+@PageTitle("Sarjat")
+@MenuItem(order = MenuItem.BEGINNING + 10, icon = VaadinIcon.GRID_SMALL)
 @Route(registerAtStartup = false, layout = TopLayout.class)
 public class EditCountsView extends VerticalLayout implements BeforeEnterObserver {
 
@@ -28,11 +33,11 @@ public class EditCountsView extends VerticalLayout implements BeforeEnterObserve
     private final CountFieldList fields = new CountFieldList();
     private final Button apply = new Button("Apply and re-optimize", e -> apply());
     private final Button cancel = new Button("Back to plan",
-            e -> UI.getCurrent().navigate(PlanView.ROUTE));
+            e -> UI.getCurrent().navigate(GridAndDownloadView.class));
 
     public EditCountsView() {
         setSizeFull();
-        add(new H2("Edit competitor counts"));
+        add(new H2("Sarjat"));
         add(new Paragraph(
                 "Changes only resize the existing queues — the lane layout stays the same."));
         add(fields);
@@ -56,7 +61,7 @@ public class EditCountsView extends VerticalLayout implements BeforeEnterObserve
         if (!missing.isEmpty()) {
             Notification.show("Warning: no course found for " + missing);
         }
-        UI.getCurrent().navigate(PlanView.ROUTE);
+        UI.getCurrent().navigate(GridAndDownloadView.class);
     }
 
     /**

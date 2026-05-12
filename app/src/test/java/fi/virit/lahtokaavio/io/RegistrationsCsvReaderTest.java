@@ -17,7 +17,7 @@ class RegistrationsCsvReaderTest {
 
     @Test
     void readsSampleFile() throws Exception {
-        try (InputStream in = getClass().getResourceAsStream("/ilmoittautumiset.csv")) {
+        try (InputStream in = getClass().getResourceAsStream("/demo/ilmoittautumiset.csv")) {
             Registrations registrations = reader.read(in);
             // "Koko tapahtuma" is an aggregate, not a day — ignored.
             assertThat(registrations.dayLabels()).containsExactly("Päivä #1");

@@ -13,13 +13,13 @@ class CourseXmlReaderTest {
 
     @Test
     void readsClassShortNameConvention() throws Exception {
-        Map<String, Course> coursesByClass = readResource("/Viking-Line-L1.xml");
+        Map<String, Course> coursesByClass = readResource("/demo/Viking-Line-L1.xml");
 
         assertThat(coursesByClass).containsKey("H15");
         Course h15 = coursesByClass.get("H15");
         assertThat(h15.name()).isEqualTo("1");
         assertThat(h15.startPlace().code()).isEqualTo("STA1");
-        assertThat(h15.controlCodes()).startsWith("172", "170", "164").contains("100");
+        assertThat(h15.controlCodes()).startsWith(172, 170, 164).contains(100);
 
         // Course shared by multiple classes is registered for each name
         assertThat(coursesByClass).containsKey("H21A").containsKey("H35");
@@ -28,7 +28,7 @@ class CourseXmlReaderTest {
 
     @Test
     void readsClassNameEmbeddedInCourseNameConvention() throws Exception {
-        Map<String, Course> coursesByClass = readResource("/Viking-Line-L2.xml");
+        Map<String, Course> coursesByClass = readResource("/demo/Viking-Line-L2.xml");
 
         assertThat(coursesByClass).containsKey("D10").containsKey("H10");
         Course d10 = coursesByClass.get("D10");
@@ -40,7 +40,7 @@ class CourseXmlReaderTest {
 
     @Test
     void readsIofV3CourseDataViaIofdomain() throws Exception {
-        Map<String, Course> coursesByClass = readResource("/iof3-courses.xml");
+        Map<String, Course> coursesByClass = readResource("/demo/iof3-courses.xml");
 
         // Purple-Pen-style v3 export with no ClassCourseAssignment block.
         // The course Name doubles as the class name.
@@ -48,8 +48,7 @@ class CourseXmlReaderTest {
         Course d10rr = coursesByClass.get("D10RR");
         assertThat(d10rr.startPlace().code()).isEqualTo("STA2");
         // First control of the course (Start / Finish entries skipped).
-        assertThat(d10rr.controlCodes()).startsWith("113", "166", "133");
-        assertThat(d10rr.controlCodes()).doesNotContain("STA2", "FIN1");
+        assertThat(d10rr.controlCodes()).startsWith(113, 166, 133);
 
         // Numeric-named courses ("2A", "3A", …) survive the same path.
         assertThat(coursesByClass).containsKeys("2A", "3A", "4A", "4B");
@@ -57,7 +56,7 @@ class CourseXmlReaderTest {
 
     @Test
     void differentStartPlacesAreDistinct() throws Exception {
-        Map<String, Course> coursesByClass = readResource("/Viking-Line-L1.xml");
+        Map<String, Course> coursesByClass = readResource("/demo/Viking-Line-L1.xml");
         // "Kunto" courses use STA2 in L1
         boolean sta1Seen = coursesByClass.values().stream()
                 .anyMatch(c -> "STA1".equals(c.startPlace().code()));

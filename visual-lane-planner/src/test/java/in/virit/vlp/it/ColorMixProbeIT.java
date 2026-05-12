@@ -74,13 +74,13 @@ public class ColorMixProbeIT {
                     List.of("ROW"),
                     offsets,
                     List.of(
-                            new LaneItem("i164", "ROW", "164", 1, 4, "164", null),
-                            new LaneItem("i165", "ROW", "165", 1, 4, "165", null),
-                            new LaneItem("i166", "ROW", "166", 1, 4, "166", null),
-                            new LaneItem("i167", "ROW", "167", 1, 4, "167", null),
-                            new LaneItem("i168", "ROW", "168", 1, 4, "168", null),
-                            new LaneItem("i169", "ROW", "169", 1, 4, "169", null),
-                            new LaneItem("i170", "ROW", "170", 1, 4, "170", null))),
+                            new LaneItem("i164", "ROW", "164", 1, 4, 164, null),
+                            new LaneItem("i165", "ROW", "165", 1, 4, 165, null),
+                            new LaneItem("i166", "ROW", "166", 1, 4, 166, null),
+                            new LaneItem("i167", "ROW", "167", 1, 4, 167, null),
+                            new LaneItem("i168", "ROW", "168", 1, 4, 168, null),
+                            new LaneItem("i169", "ROW", "169", 1, 4, 169, null),
+                            new LaneItem("i170", "ROW", "170", 1, 4, 170, null))),
                     p -> Notification.show("changed"));
             add(planner);
         }

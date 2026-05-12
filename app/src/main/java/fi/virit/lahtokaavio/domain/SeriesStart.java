@@ -17,7 +17,7 @@ public record SeriesStart(
         String laneId,
         int competitors,
         int startIntervalMinutes,
-        List<String> controlCodes) {
+        List<Integer> controlCodes) {
 
     public SeriesStart {
         controlCodes = List.copyOf(controlCodes);

@@ -114,6 +114,21 @@ public class CompetitionWorkspace {
     }
 
     /**
+     * Wipes the workspace back to a fresh state so the user can start a new
+     * competition without reloading the page. Keeps the default planner
+     * parameters around but everything else (courses, counts, registrations,
+     * plan) is cleared.
+     */
+    public void reset() {
+        coursesByClass.clear();
+        counts.clear();
+        registrations = null;
+        selectedDay = null;
+        parameters = CompetitionParameters.defaults();
+        plan = null;
+    }
+
+    /**
      * Captures the current state for JSON persistence. The raw {@link Registrations}
      * are intentionally left out — the editable {@code counts} carry forward all
      * information the user can still adjust.

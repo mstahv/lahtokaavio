@@ -25,11 +25,11 @@ public record LaneItem(
         String label,
         int stepMinutes,
         int unitCount,
-        String colorKey,
+        int colorKey,
         String tooltipExtra) {
 
     /** Convenience constructor for the common case (no colour grouping, no extras). */
     public LaneItem(String id, String laneId, String label, int stepMinutes, int unitCount) {
-        this(id, laneId, label, stepMinutes, unitCount, null, null);
+        this(id, laneId, label, stepMinutes, unitCount, 0, null);
     }
 }

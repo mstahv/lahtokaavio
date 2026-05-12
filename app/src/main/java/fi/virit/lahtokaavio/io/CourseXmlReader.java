@@ -125,13 +125,13 @@ public final class CourseXmlReader {
             throw new IllegalArgumentException(
                     "Course '" + courseName + "' has no <StartPointCode>");
         }
-        List<String> controlCodes = readV2ControlCodes(variation);
+        List<Integer> controlCodes = readV2ControlCodes(variation);
         Course course = new Course(courseName, new StartPlace(startPointCode), controlCodes);
         return new CourseDescriptor(course, classNames);
     }
 
-    private List<String> readV2ControlCodes(Element variation) {
-        List<String> codes = new ArrayList<>();
+    private List<Integer> readV2ControlCodes(Element variation) {
+        List<Integer> codes = new ArrayList<>();
         NodeList controls = variation.getElementsByTagName("CourseControl");
         for (int i = 0; i < controls.getLength(); i++) {
             Element control = (Element) controls.item(i);
@@ -140,10 +140,19 @@ public final class CourseXmlReader {
             }
             String code = textOfChild(control, "ControlCode");
             if (code != null && !code.isBlank()) {
-                codes.add(code);
+                codes.add(parseControlCode(code));
             }
         }
         return codes;
+    }
+
+    private static int parseControlCode(String raw) {
+        try {
+            return Integer.parseInt(raw.trim());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(
+                    "Non-numeric control code: '" + raw + "'", e);
+        }
     }
 
     // --- IOF v3 ----------------------------------------------------------
@@ -195,14 +204,14 @@ public final class CourseXmlReader {
 
     private Course toCourse(org.orienteering.datastandard._3.Course raw) {
         String startCode = null;
-        List<String> controlCodes = new ArrayList<>();
+        List<Integer> controlCodes = new ArrayList<>();
         for (CourseControl cc : raw.getCourseControl()) {
             ControlType type = cc.getType();
             String code = cc.getControl().isEmpty() ? null : cc.getControl().getFirst();
             if (type == ControlType.START) {
                 startCode = code;
             } else if (type == ControlType.CONTROL && code != null) {
-                controlCodes.add(code);
+                controlCodes.add(parseControlCode(code));
             }
             // FINISH / CROSSING_POINT / END_OF_MARKED_ROUTE: not part of the
             // ordered control sequence we use for planning / CSV export.

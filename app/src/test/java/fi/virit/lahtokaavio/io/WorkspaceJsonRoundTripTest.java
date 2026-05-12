@@ -9,21 +9,21 @@ import fi.virit.lahtokaavio.domain.StartPlace;
 import fi.virit.lahtokaavio.domain.StartPlan;
 import fi.virit.lahtokaavio.domain.WorkspaceSnapshot;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.time.LocalTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.ObjectMapper;
 
 class WorkspaceJsonRoundTripTest {
-
-    private final WorkspaceJsonWriter writer = new WorkspaceJsonWriter();
-    private final WorkspaceJsonReader reader = new WorkspaceJsonReader();
+   private final WorkspaceJsonReader reader = new WorkspaceJsonReader();
 
     @Test
     void roundTripPreservesAllFields() {
-        Course main = new Course("1", new StartPlace("STA1"), List.of("144", "100"));
-        Course kunto = new Course("Kunto3", new StartPlace("STA2"), List.of("160", "100"));
+        Course main = new Course("1", new StartPlace("STA1"), List.of(144, 100));
+        Course kunto = new Course("Kunto3", new StartPlace("STA2"), List.of(160, 100));
 
         Map<String, Course> courses = new LinkedHashMap<>();
         courses.put("H21E", main);
@@ -38,14 +38,16 @@ class WorkspaceJsonRoundTripTest {
 
         StartPlan plan = new StartPlan(params, List.of(
                 new SeriesStart("H21E", LocalTime.of(11, 30), LocalTime.of(12, 8),
-                        "STA1-1", 20, 2, List.of("144", "100")),
+                        "STA1-1", 20, 2, List.of(144, 100)),
                 new SeriesStart("Kunto3", LocalTime.of(11, 30), LocalTime.of(11, 38),
-                        "STA2-1", 5, 2, List.of("160", "100"))));
+                        "STA2-1", 5, 2, List.of(160, 100))));
 
         WorkspaceSnapshot original = new WorkspaceSnapshot(
                 courses, counts, "Päivä #1", params, plan);
 
-        byte[] bytes = writer.writeBytes(original);
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        new ObjectMapper().writeValue(bout, original);
+        byte[] bytes = bout.toByteArray();
         WorkspaceSnapshot loaded = reader.read(new ByteArrayInputStream(bytes));
 
         assertThat(loaded.coursesByClass()).isEqualTo(original.coursesByClass());
@@ -62,7 +64,9 @@ class WorkspaceJsonRoundTripTest {
         WorkspaceSnapshot original = new WorkspaceSnapshot(
                 Map.of(), Map.of(), null, CompetitionParameters.defaults(), null);
 
-        byte[] bytes = writer.writeBytes(original);
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        new ObjectMapper().writeValue(bout, original);
+        byte[] bytes = bout.toByteArray();
         WorkspaceSnapshot loaded = reader.read(new ByteArrayInputStream(bytes));
 
         assertThat(loaded.coursesByClass()).isEmpty();
