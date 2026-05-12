@@ -16,7 +16,7 @@ D12TR;9;10;9;10;9;10
 D13;9;9;9;9;9;9
 ````
 
-IOF XML tiedostossa on ratatiedot, mukaanlukien lähtöpaikat. Jos sama lähtöpaikka esiintyy useammalla radalla, kyseessä on sama fyysinen lähtö ja sarjat jakavat saman kapasiteetin.
+IOF XML tiedostossa on ratatiedot, mukaanlukien lähtöpaikat. Jos sama lähtöpaikka esiintyy useammalla radalla, kyseessä on sama fyysinen lähtö ja sarjat jakavat saman kapasiteetin. Sekä **IOF XML v2** (vanha legacy-formaatti `<IOFVersion version="2.x"/>`-merkinnällä) että **v3** (`iofVersion="3.0"` -juuriattribuutti, namespace `http://www.orienteering.org/datastandard/3.0`) tuetaan: v2:n parsii oma DOM-pohjainen koodi, v3:n osalta delegoidaan `in.virit:iofdomain`-kirjaston JAXB-bindeihin. v3-tiedostoissa luokka↔rata-mappaus haetaan ensisijaisesti `<ClassCourseAssignment>`-blokista; jos ei ole, käytetään radan `<Name>`-elementtiä (esim. Purple Pen export).
 
 Useampipäiväisessä kilpailussa käyttäjä valitsee kisaa luodessaan, minkä päivän (eli minkä sarakkeen ilmoittautumis-CSV:stä) lähtökaavio suunnitellaan. Kullekin päivälle tehdään oma erillinen lähtökaavionsa. Mahdollinen "Koko tapahtuma" -sarake on koontiluku eikä päivä, joten se ohitetaan parsittaessa.
 

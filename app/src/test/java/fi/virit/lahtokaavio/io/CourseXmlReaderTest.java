@@ -39,6 +39,23 @@ class CourseXmlReaderTest {
     }
 
     @Test
+    void readsIofV3CourseDataViaIofdomain() throws Exception {
+        Map<String, Course> coursesByClass = readResource("/iof3-courses.xml");
+
+        // Purple-Pen-style v3 export with no ClassCourseAssignment block.
+        // The course Name doubles as the class name.
+        assertThat(coursesByClass).containsKey("D10RR");
+        Course d10rr = coursesByClass.get("D10RR");
+        assertThat(d10rr.startPlace().code()).isEqualTo("STA2");
+        // First control of the course (Start / Finish entries skipped).
+        assertThat(d10rr.controlCodes()).startsWith("113", "166", "133");
+        assertThat(d10rr.controlCodes()).doesNotContain("STA2", "FIN1");
+
+        // Numeric-named courses ("2A", "3A", …) survive the same path.
+        assertThat(coursesByClass).containsKeys("2A", "3A", "4A", "4B");
+    }
+
+    @Test
     void differentStartPlacesAreDistinct() throws Exception {
         Map<String, Course> coursesByClass = readResource("/Viking-Line-L1.xml");
         // "Kunto" courses use STA2 in L1
