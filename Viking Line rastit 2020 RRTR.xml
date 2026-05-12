@@ -10,7 +10,7 @@
     <MapPosition x="28.09" y="20.36" />
   </Map>
   <StartPoint>
-    <StartPointCode>STA1</StartPointCode>
+    <StartPointCode>STA2</StartPointCode>
     <ControlPosition x="266675" y="6695107" />
     <MapPosition x="55.54" y="-49.82" />
   </StartPoint>
@@ -145,7 +145,7 @@
     <CourseVariation>
       <CourseVariationId>0</CourseVariationId>
       <CourseLength>1700</CourseLength>
-      <StartPointCode>STA1</StartPointCode>
+      <StartPointCode>STA2</StartPointCode>
       <CourseControl>
         <Sequence>1</Sequence>
         <ControlCode>144</ControlCode>
@@ -186,7 +186,7 @@
     <CourseVariation>
       <CourseVariationId>0</CourseVariationId>
       <CourseLength>1900</CourseLength>
-      <StartPointCode>STA1</StartPointCode>
+      <StartPointCode>STA2</StartPointCode>
       <CourseControl>
         <Sequence>1</Sequence>
         <ControlCode>144</ControlCode>
@@ -232,7 +232,7 @@
     <CourseVariation>
       <CourseVariationId>0</CourseVariationId>
       <CourseLength>2400</CourseLength>
-      <StartPointCode>STA1</StartPointCode>
+      <StartPointCode>STA2</StartPointCode>
       <CourseControl>
         <Sequence>1</Sequence>
         <ControlCode>134</ControlCode>
@@ -293,7 +293,7 @@
     <CourseVariation>
       <CourseVariationId>0</CourseVariationId>
       <CourseLength>2900</CourseLength>
-      <StartPointCode>STA1</StartPointCode>
+      <StartPointCode>STA2</StartPointCode>
       <CourseControl>
         <Sequence>1</Sequence>
         <ControlCode>144</ControlCode>

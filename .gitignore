@@ -11,6 +11,7 @@ target/
 .settings/
 .project
 .classpath
+.flattened-pom.xml
 
 .DS_Store
 
@@ -18,8 +19,15 @@ node_modules/
 package-lock.json
 pnpm-lock.yaml
 yarn.lock
-frontend/generated/
-src/main/frontend/generated/
-src/main/bundles/
+
+# Vaadin auto-generated frontend artifacts
+**/frontend/generated/
+**/src/main/bundles/
+vite.generated.ts
+tsconfig.json
+types.d.ts
+**/vite.generated.ts
+**/tsconfig.json
+**/types.d.ts
 
 .mvn/wrapper/maven-wrapper.jar
