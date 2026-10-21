@@ -7,6 +7,7 @@ import com.vaadin.browserless.BrowserlessUIContext;
 import com.vaadin.flow.component.notification.NotificationLocator;
 import fi.virit.lahtokaavio.domain.DrawnStart;
 import fi.virit.lahtokaavio.domain.SeriesStart;
+import fi.virit.lahtokaavio.io.NavisportLanguage;
 import fi.virit.lahtokaavio.ui.helpers.SampleData;
 import in.virit.vlp.VisualLanePlanner;
 import java.io.ByteArrayOutputStream;
@@ -101,13 +102,16 @@ class MetsasprinttiDataTest {
         assertThat(lines).anyMatch(line -> line.startsWith("H21;")
                 && line.contains(";Arola Topias;Sweden;536400;3094;"));
 
-        // The same draw for Navisport's participant import
+        // The same draw for Navisport's participant import. Navisport only
+        // recognises the headers in the language of its UI.
         window.findCheckbox().withLabel("Navisport format").check();
+        window.findSelect(NavisportLanguage.class).withAriaLabel("Navisport language")
+                .selectItem("English");
         out = new ByteArrayOutputStream();
         window.findAnchor().withText("Download start list (CSV)").download(out);
         lines = out.toString(StandardCharsets.UTF_8).lines().toList();
         assertThat(lines.getFirst())
-                .isEqualTo("Nimi,Kilpailukortti,Seura,Sarja,Lähtöaika,Lisenssinumero");
+                .isEqualTo("Name,Chip,Club,Class,Start time,License number");
         assertThat(lines).hasSize(1 + 143);
         assertThat(lines).anyMatch(line -> line.matches(
                 "Topias Arola,536400,Sweden,H21,\\d\\d:\\d\\d:00,3094"));

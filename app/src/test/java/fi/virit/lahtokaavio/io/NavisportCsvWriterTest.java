@@ -25,13 +25,26 @@ class NavisportCsvWriterTest {
                         new Entry("D14", "123", "456789", "Äyräs Öljy", "Rasti-Vihti")),
                 new DrawnStart(LocalTime.of(10, 3), "STA1-1",
                         new Entry("14 Avoin", "", "", "Meikäläinen Maija Liisa", "Turku, OK"))),
-                out);
+                NavisportLanguage.FINNISH, out);
 
         assertThat(out.toString(StandardCharsets.UTF_8)).isEqualTo("""
                 Nimi,Kilpailukortti,Seura,Sarja,Lähtöaika,Lisenssinumero
                 Öljy Äyräs,456789,Rasti-Vihti,D14,10:02:00,123
                 Maija Liisa Meikäläinen,,"Turku, OK",14 Avoin,10:03:00,
                 """);
+    }
+
+    @Test
+    void headersFollowTheLanguageOfTheUsersNavisport() {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        writer.writeStartList(List.of(), NavisportLanguage.ENGLISH, out);
+        assertThat(out.toString(StandardCharsets.UTF_8))
+                .isEqualTo("Name,Chip,Club,Class,Start time,License number\n");
+
+        out = new ByteArrayOutputStream();
+        writer.writeStartList(List.of(), NavisportLanguage.SWEDISH, out);
+        assertThat(out.toString(StandardCharsets.UTF_8))
+                .isEqualTo("Namn,Bricka,Klubb,Klass,Starttid,Licensnummer\n");
     }
 
     @Test

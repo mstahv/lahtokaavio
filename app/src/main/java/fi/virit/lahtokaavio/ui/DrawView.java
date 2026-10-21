@@ -12,6 +12,7 @@ import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
@@ -23,6 +24,7 @@ import fi.virit.lahtokaavio.domain.Entry;
 import fi.virit.lahtokaavio.domain.StartDraw;
 import fi.virit.lahtokaavio.io.EntriesCsvReader;
 import fi.virit.lahtokaavio.io.NavisportCsvWriter;
+import fi.virit.lahtokaavio.io.NavisportLanguage;
 import fi.virit.lahtokaavio.io.StartListCsvWriter;
 import fi.virit.lahtokaavio.plan.StartTimeDraw;
 import java.io.ByteArrayInputStream;
@@ -48,7 +50,7 @@ public class DrawView extends VerticalLayout implements BeforeEnterObserver {
     private final Span entriesStatus = new Span();
     private final Button drawButton = new Button("Draw start times", e -> draw());
     private final Anchor download = new StartListDownload();
-    private final Checkbox navisportFormat = new Checkbox("Navisport format");
+    private final NavisportFormat navisportFormat = new NavisportFormat();
     private final DrawnStartGrid grid = new DrawnStartGrid();
 
     public DrawView() {
@@ -123,9 +125,10 @@ public class DrawView extends VerticalLayout implements BeforeEnterObserver {
         navisportFormat.setVisible(draw != null);
         download.setHref(event -> {
             event.setContentType("text/csv");
-            if (navisportFormat.getValue()) {
+            if (navisportFormat.isSelected()) {
                 event.setFileName("lahtoluettelo-navisport.csv");
-                navisportWriter.writeStartList(starts, event.getOutputStream());
+                navisportWriter.writeStartList(starts, navisportFormat.language(),
+                        event.getOutputStream());
             } else {
                 event.setFileName("lahtoluettelo.csv");
                 startListWriter.writeBytes(starts, event.getOutputStream());
@@ -139,6 +142,41 @@ public class DrawView extends VerticalLayout implements BeforeEnterObserver {
                     (metadata, data) -> onEntriesUploaded(data, metadata.fileName())));
             setAcceptedFileTypes("text/csv", ".csv");
             setDropLabel(new Paragraph("Entries CSV from IRMA"));
+        }
+    }
+
+    /**
+     * Navisport recognises the columns only in the language of its UI, so
+     * the user picks the language of their Navisport.
+     */
+    private class NavisportFormat extends HorizontalLayout {
+        private final Checkbox enabled = new Checkbox("Navisport format");
+        private final Select<NavisportLanguage> language = new LanguageSelect();
+
+        NavisportFormat() {
+            setAlignItems(Alignment.BASELINE);
+            language.setVisible(false);
+            enabled.addValueChangeListener(e -> language.setVisible(e.getValue()));
+            add(enabled, language);
+        }
+
+        boolean isSelected() {
+            return enabled.getValue();
+        }
+
+        NavisportLanguage language() {
+            return language.getValue();
+        }
+
+        private class LanguageSelect extends Select<NavisportLanguage> {
+            LanguageSelect() {
+                setAriaLabel("Navisport language");
+                setTooltipText("The language of your Navisport: it only recognises "
+                        + "the column headers in that language");
+                setItems(NavisportLanguage.values());
+                setItemLabelGenerator(NavisportLanguage::caption);
+                setValue(NavisportLanguage.of(DrawView.this.getLocale()));
+            }
         }
     }
 

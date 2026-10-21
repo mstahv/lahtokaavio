@@ -17,10 +17,11 @@ import java.util.stream.Stream;
 
 /**
  * Writes the CSV files Navisport imports
- * (https://navisport.com/docs/fi/import-export/overview), comma-delimited UTF-8:
+ * (https://navisport.com/docs/en/import-export/overview), comma-delimited UTF-8:
  * <ul>
- * <li>the drawn start list for the participant import, with Navisport's
- * Finnish column headers and the name as "Firstname Lastname";</li>
+ * <li>the drawn start list for the participant import, with the column
+ * headers in the language of the user's Navisport and the name as
+ * "Firstname Lastname";</li>
  * <li>the start scheme ("lähtöaikataulu"): class, first start and interval
  * in seconds, no header, so that Navisport can do the draw itself.</li>
  * </ul>
@@ -28,14 +29,13 @@ import java.util.stream.Stream;
 @org.springframework.stereotype.Component
 public final class NavisportCsvWriter {
 
-    static final String START_LIST_HEADER = "Nimi,Kilpailukortti,Seura,Sarja,Lähtöaika,Lisenssinumero";
-
     private static final DateTimeFormatter START_TIME = DateTimeFormatter.ofPattern("HH:mm:ss");
     private static final DateTimeFormatter FIRST_START = DateTimeFormatter.ofPattern("HH:mm");
 
-    public void writeStartList(List<DrawnStart> starts, OutputStream out) {
+    public void writeStartList(List<DrawnStart> starts, NavisportLanguage language,
+                               OutputStream out) {
         write(out, writer -> {
-            writer.write(START_LIST_HEADER);
+            writer.write(language.startListHeader());
             writer.write('\n');
             for (DrawnStart start : starts) {
                 Entry entry = start.entry();
