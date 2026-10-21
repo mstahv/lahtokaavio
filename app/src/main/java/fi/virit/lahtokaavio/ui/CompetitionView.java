@@ -111,7 +111,7 @@ public class CompetitionView extends VerticalLayout implements AfterNavigationOb
                 phase1.uploadOption.refreshContinueEnabled();
             }
         } catch (RuntimeException e) {
-            Notification.show("Failed to read " + fileName + ": " + e.getMessage());
+            ProblemNotification.error("Failed to read " + fileName + ": " + e.getMessage());
         }
     }
 
@@ -127,7 +127,7 @@ public class CompetitionView extends VerticalLayout implements AfterNavigationOb
                 phase2.populateDays(registrations.dayLabels());
             }
         } catch (RuntimeException e) {
-            Notification.show("Failed to read " + fileName + ": " + e.getMessage());
+            ProblemNotification.error("Failed to read " + fileName + ": " + e.getMessage());
         }
     }
 
@@ -144,7 +144,7 @@ public class CompetitionView extends VerticalLayout implements AfterNavigationOb
                 renderContent();
             }
         } catch (RuntimeException e) {
-            Notification.show("Failed to read " + fileName + ": " + e.getMessage());
+            ProblemNotification.error("Failed to read " + fileName + ": " + e.getMessage());
         }
     }
 
@@ -159,7 +159,7 @@ public class CompetitionView extends VerticalLayout implements AfterNavigationOb
     private void regenerateAndNavigate() {
         List<String> missing = CompetitionWorkspace.current().regeneratePlan();
         if (!missing.isEmpty()) {
-            Notification.show("Warning: no course found for " + missing);
+            ProblemNotification.warning("Warning: no course found for " + missing);
         }
         registerSessionRoutes();
         UI.getCurrent().navigate(GanttView.class);

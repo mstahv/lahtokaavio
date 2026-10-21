@@ -5,7 +5,6 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.icon.VaadinIcon;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
@@ -59,7 +58,7 @@ public class EditCountsView extends VerticalLayout implements BeforeEnterObserve
         fields.snapshot().forEach(workspace::setCount);
         List<String> missing = workspace.regeneratePlan();
         if (!missing.isEmpty()) {
-            Notification.show("Warning: no course found for " + missing);
+            ProblemNotification.warning("Warning: no course found for " + missing);
         }
         UI.getCurrent().navigate(GridAndDownloadView.class);
     }
