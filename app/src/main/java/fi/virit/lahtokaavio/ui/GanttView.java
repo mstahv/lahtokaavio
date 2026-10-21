@@ -65,11 +65,6 @@ public class GanttView extends VerticalLayout implements BeforeEnterObserver {
         CompetitionWorkspace.current().setPlan(rebuilt);
     }
 
-    /** Test hook for assertions on the underlying component. */
-    public VisualLanePlanner planner() {
-        return planner;
-    }
-
     // --- Mapping ---------------------------------------------------------
 
     private LanePlan toLanePlan(StartPlan plan) {
