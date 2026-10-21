@@ -2,6 +2,7 @@ package fi.virit.lahtokaavio.domain;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -9,6 +10,7 @@ import java.util.Set;
  * Result of parsing the registrations CSV: per-day competitor counts
  * keyed by class name. Each row in the CSV contributes one entry per day
  * column. Day labels are taken from the CSV header (e.g. "Päivä #1").
+ * The counts can also be computed from the list of entries.
  */
 public final class Registrations {
 
@@ -19,6 +21,18 @@ public final class Registrations {
         countsByDayAndClass.forEach((day, perClass) ->
                 copy.put(day, Collections.unmodifiableMap(new LinkedHashMap<>(perClass))));
         this.countsByDayAndClass = Collections.unmodifiableMap(copy);
+    }
+
+    /** The day label used when the counts are computed from a list of entries. */
+    public static final String SINGLE_DAY = "Päivä #1";
+
+    /** Counts the competitors per class, in the order the classes first appear. */
+    public static Registrations fromEntries(List<Entry> entries) {
+        Map<String, Integer> counts = new LinkedHashMap<>();
+        for (Entry entry : entries) {
+            counts.merge(entry.className(), 1, Integer::sum);
+        }
+        return new Registrations(Map.of(SINGLE_DAY, counts));
     }
 
     public Set<String> dayLabels() {

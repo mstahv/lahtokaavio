@@ -54,8 +54,8 @@ public class DrawView extends VerticalLayout implements BeforeEnterObserver {
     public DrawView() {
         setSizeFull();
         add(new H2("Arvonta"));
-        add(new Paragraph("Upload the entries exported from IRMA (ilmoittautuneet.csv) and "
-                + "draw the start order within each class. Drawing again gives a new order. "
+        add(new Paragraph("Upload the entries exported from IRMA (ilmoittautuneet.csv), unless "
+                + "they were already given as the registrations, and draw the start order within each class. Drawing again gives a new order. "
                 + "With Navisport format the list can be imported to Navisport's participant data."));
         add(new EntriesUpload(), entriesStatus);
         drawButton.addThemeVariants(ButtonVariant.PRIMARY);

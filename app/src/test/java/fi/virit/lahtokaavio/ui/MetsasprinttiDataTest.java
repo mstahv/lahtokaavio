@@ -134,6 +134,32 @@ class MetsasprinttiDataTest {
         assertThat(lines).allMatch(line -> line.matches("[^,]+,\\d\\d:\\d\\d,\\d+"));
     }
 
+    @Test
+    void organiserPlansFromTheListOfEntriesAndDrawsWithoutUploadingAgain() {
+        window.navigate(CompetitionView.class);
+        window.findUpload().atIndex(1).upload("Metsäsprintti-26.xml", "text/xml",
+                SampleData.read("/metsasprintti/Metsasprintti-26.xml"));
+        // The list of entries instead of the count summary
+        window.findUpload().atIndex(2).upload("ilmoittautuneet.csv", "text/csv",
+                SampleData.read("/metsasprintti/ilmoittautuneet.csv"));
+        assertThat(problemShown()).isFalse();
+        window.findButton().withText("Continue").click();
+        window.findButton().withText("Generate Initial Start Plan").click();
+        window.findButton().withText("OK").inside(problem()).click(); // 10 Avoin borrows
+
+        // The late entries are counted in: D12 has 7, the summary said 6
+        assertThat(CompetitionWorkspace.current().plan().seriesStarts())
+                .filteredOn(s -> s.seriesName().equals("D12"))
+                .extracting(SeriesStart::competitors).containsExactly(7);
+
+        // The entries are already there for the draw, and everyone has a slot
+        window.navigate(DrawView.class);
+        assertThat(window.findSpan().withText("143 competitors in 32 classes").exists()).isTrue();
+        window.findButton().withText("Draw start times").click();
+        assertThat(problemShown()).as("no overbooked classes").isFalse();
+        assertThat(window.findGrid(DrawnStart.class).size()).isEqualTo(143);
+    }
+
     private void generatePlan() {
         window.navigate(CompetitionView.class);
 
@@ -154,7 +180,7 @@ class MetsasprinttiDataTest {
         window.findUpload().atIndex(2).upload("courses.xml", "text/csv",
                 "<CourseData/>".getBytes(StandardCharsets.UTF_8));
 
-        assertThat(problemText()).startsWith("Failed to read courses.xml: Expected header");
+        assertThat(problemText()).startsWith("Failed to read courses.xml: Expected IRMA's summary by class");
         // No time passes in a browserless test, so check the setting itself
         assertThat(problem().component().getDuration()).as("stays open until dismissed").isZero();
 

@@ -21,12 +21,16 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.server.streams.UploadHandler;
 import fi.virit.lahtokaavio.domain.Course;
+import fi.virit.lahtokaavio.domain.Entry;
+import fi.virit.lahtokaavio.domain.Registrations;
 import fi.virit.lahtokaavio.domain.WorkspaceSnapshot;
 import fi.virit.lahtokaavio.io.CourseXmlReader;
 import fi.virit.lahtokaavio.io.DemoFiles;
+import fi.virit.lahtokaavio.io.EntriesCsvReader;
 import fi.virit.lahtokaavio.io.RegistrationsCsvReader;
 import fi.virit.lahtokaavio.io.WorkspaceJsonReader;
 import java.io.ByteArrayInputStream;
+import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.vaadin.firitin.appframework.MenuItem;
@@ -38,21 +42,25 @@ public class CompetitionView extends VerticalLayout implements AfterNavigationOb
 
     private final CourseXmlReader courseReader;
     private final RegistrationsCsvReader registrationsReader;
+    private final EntriesCsvReader entriesReader;
     private final WorkspaceJsonReader jsonReader;
 
     private InitialWizard phase1;
     private ParametersPhase phase2;
 
     public CompetitionView() {
-        this(new CourseXmlReader(), new RegistrationsCsvReader(), new WorkspaceJsonReader());
+        this(new CourseXmlReader(), new RegistrationsCsvReader(), new EntriesCsvReader(),
+                new WorkspaceJsonReader());
     }
 
     @Autowired
     public CompetitionView(CourseXmlReader courseReader,
                            RegistrationsCsvReader registrationsReader,
+                           EntriesCsvReader entriesReader,
                            WorkspaceJsonReader jsonReader) {
         this.courseReader = courseReader;
         this.registrationsReader = registrationsReader;
+        this.entriesReader = entriesReader;
         this.jsonReader = jsonReader;
         setSizeFull();
         add(new H1("Lähtökaavio"));
@@ -116,9 +124,22 @@ public class CompetitionView extends VerticalLayout implements AfterNavigationOb
 
     private void onRegistrationsUploaded(byte[] csv, String fileName) {
         try {
-            var registrations = registrationsReader.read(new ByteArrayInputStream(csv));
-            CompetitionWorkspace.current().setRegistrations(registrations);
-            Notification.show("Loaded registrations for " + registrations.dayLabels().size() + " day(s)");
+            Registrations registrations;
+            if (RegistrationsCsvReader.isCountSummary(csv)) {
+                registrations = registrationsReader.read(new ByteArrayInputStream(csv));
+                CompetitionWorkspace.current().setRegistrations(registrations);
+                Notification.show("Loaded registrations for "
+                        + registrations.dayLabels().size() + " day(s)");
+            } else {
+                // The list of entries: count them, and keep them for the draw
+                List<Entry> entries = readEntries(csv);
+                registrations = Registrations.fromEntries(entries);
+                CompetitionWorkspace.current().setRegistrations(registrations);
+                CompetitionWorkspace.current().setEntries(entries);
+                Notification.show("Loaded " + entries.size() + " entries in "
+                        + registrations.countsForDay(Registrations.SINGLE_DAY).size()
+                        + " classes");
+            }
             if (phase1 != null) {
                 phase1.uploadOption.refreshContinueEnabled();
             }
@@ -127,6 +148,15 @@ public class CompetitionView extends VerticalLayout implements AfterNavigationOb
             }
         } catch (RuntimeException e) {
             ProblemNotification.error("Failed to read " + fileName + ": " + e.getMessage());
+        }
+    }
+
+    private List<Entry> readEntries(byte[] csv) {
+        try {
+            return entriesReader.read(new ByteArrayInputStream(csv));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Expected IRMA's summary by class (header "
+                    + "starting with 'Sarja') or its list of entries. " + e.getMessage(), e);
         }
     }
 
@@ -213,7 +243,10 @@ public class CompetitionView extends VerticalLayout implements AfterNavigationOb
             add(new H3("Option A — Upload data files"));
             add(new Paragraph(
                     "Drop in the course XML (one or more files in IOF v2 or v3 format) "
-                    + "and the registrations CSV exported from IRMA, then click Continue."));
+                    + "and the registrations from IRMA, either the summary by class or the "
+                    + "list of entries (ilmoittautuneet.csv), then click Continue. With the "
+                    + "list of entries, the counts are computed and the entries are ready "
+                    + "for the draw."));
 
             Upload coursesUpload = new Upload(UploadHandler.inMemory(
                     (metadata, data) -> onCoursesUploaded(data, metadata.fileName())));

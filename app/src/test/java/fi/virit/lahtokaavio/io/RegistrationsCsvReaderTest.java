@@ -97,4 +97,20 @@ class RegistrationsCsvReaderTest {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("D14");
     }
+
+    @Test
+    void tellsTheCountSummaryFromTheListOfEntries() throws Exception {
+        assertThat(RegistrationsCsvReader.isCountSummary(
+                resource("/metsasprintti/ilmoittautumiset-irmasta-mp.csv"))).isTrue();
+        assertThat(RegistrationsCsvReader.isCountSummary(
+                resource("/demo/ilmoittautumiset.csv"))).isTrue();
+        assertThat(RegistrationsCsvReader.isCountSummary(
+                resource("/metsasprintti/ilmoittautuneet.csv"))).isFalse();
+    }
+
+    private byte[] resource(String name) throws Exception {
+        try (InputStream in = getClass().getResourceAsStream(name)) {
+            return in.readAllBytes();
+        }
+    }
 }

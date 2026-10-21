@@ -33,6 +33,9 @@ import java.util.Map;
  * order mark. The encoding is still detected, as older Pirilä-style files
  * are Windows-1252 ({@link #DEFAULT_CHARSET}): input that is valid UTF-8 is
  * read as UTF-8, anything else as Windows-1252.
+ * <p>
+ * IRMA also exports the full list of entries, from which the counts can be
+ * computed: {@link #isCountSummary(byte[])} tells the two apart.
  */
 @org.springframework.stereotype.Component
 public final class RegistrationsCsvReader {
@@ -59,6 +62,19 @@ public final class RegistrationsCsvReader {
         } catch (CharacterCodingException e) {
             return DEFAULT_CHARSET;
         }
+    }
+
+    /**
+     * Whether the file is the count summary by class (header row starting
+     * with "Sarja") rather than the headerless list of entries.
+     */
+    public static boolean isCountSummary(byte[] bytes) {
+        String text = new String(bytes, detectCharset(bytes));
+        if (text.startsWith(BYTE_ORDER_MARK)) {
+            text = text.substring(1);
+        }
+        String firstCell = text.lines().findFirst().orElse("").split(DELIMITER, 2)[0];
+        return firstCell.trim().equalsIgnoreCase(CLASS_COLUMN_HEADER);
     }
 
     public Registrations read(InputStream input) {
