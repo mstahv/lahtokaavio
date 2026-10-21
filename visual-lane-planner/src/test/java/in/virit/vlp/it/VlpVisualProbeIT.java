@@ -46,6 +46,7 @@ public class VlpVisualProbeIT {
     public void screenshotAndMeasure() {
         page.navigate("http://localhost:" + port + "/basic");
         page.locator("[data-item]").first().waitFor();
+        page.waitForTimeout(500); // let a resize driven re-render settle
 
         page.screenshot(new Page.ScreenshotOptions()
                 .setPath(Paths.get("/tmp/vlp-basic.png"))

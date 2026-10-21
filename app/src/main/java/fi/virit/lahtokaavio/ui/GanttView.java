@@ -43,7 +43,7 @@ public class GanttView extends VerticalLayout implements BeforeEnterObserver {
         setSizeFull();
         add(new H2("Lähtökaavio"));
         add(new Paragraph(
-                "Drag a series onto another lane, or use the … menu on the series box. "
+                "Drag a series onto another lane, or right-click (long-press) the series box. "
                 + "Lanes are re-timed automatically. Use Re-optimize from the entry view "
                 + "to reset to the algorithm's choice."));
         add(planner);

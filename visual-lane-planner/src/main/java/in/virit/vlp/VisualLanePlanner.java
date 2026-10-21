@@ -1,6 +1,8 @@
 package in.virit.vlp;
 
+import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Composite;
+import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.contextmenu.ContextMenu;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.dnd.DragSource;
@@ -8,9 +10,11 @@ import com.vaadin.flow.component.dnd.DropEffect;
 import com.vaadin.flow.component.dnd.DropTarget;
 import com.vaadin.flow.component.dnd.EffectAllowed;
 import com.vaadin.flow.dom.Style;
+import com.vaadin.flow.shared.Registration;
 import in.virit.color.Color;
 import in.virit.color.HslColor;
 import in.virit.color.NamedColor;
+import org.vaadin.firitin.util.ResizeObserver;
 import org.vaadin.firitin.util.VStyle;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -52,7 +56,12 @@ import org.vaadin.firitin.components.orderedlayout.VVerticalLayout;
  */
 public class VisualLanePlanner extends Composite<VVerticalLayout> {
 
-    private static final int PIXELS_PER_MINUTE = 8;
+    /** Scale before the first size report from the browser. */
+    private static final int DEFAULT_PIXELS_PER_MINUTE = 8;
+    /** Narrower than this, the chart scrolls horizontally instead. */
+    private static final int MIN_PIXELS_PER_MINUTE = 3;
+    /** Wider than this would only stretch short plans. */
+    private static final int MAX_PIXELS_PER_MINUTE = 40;
     private static final int LANE_LABEL_WIDTH_PX = 80;
     private static final int LANE_HEIGHT_PX = 32;
     private static final int ITEM_BOX_INSET_PX = 4;
@@ -76,13 +85,54 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
     }
 
     private LanePlan plan;
+    private int pixelsPerMinute = DEFAULT_PIXELS_PER_MINUTE;
+    private int availableWidthPx;
+    private Registration resizeRegistration;
     private final LinkedHashMap<String, List<LaneItem>> byLane = new LinkedHashMap<>();
     private Consumer<LanePlan> onChange;
 
     public VisualLanePlanner() {
+        getContent().setWidthFull();
         getContent().setSpacing(false);
         getContent().setPadding(false);
+        getContent().getStyle().setOverflow(Style.Overflow.AUTO);
         getContent().getElement().setAttribute("data-component", "visual-lane-planner");
+    }
+
+    /**
+     * Scales the time axis to the width the component gets, so the whole plan
+     * is visible without wasting the screen. Re-renders only when the scale
+     * actually changes.
+     */
+    @Override
+    protected void onAttach(AttachEvent attachEvent) {
+        super.onAttach(attachEvent);
+        resizeRegistration = ResizeObserver.of(attachEvent.getUI())
+                .addResizeListener(getContent(), e -> {
+                    availableWidthPx = e.getWidth();
+                    rescale();
+                });
+    }
+
+    @Override
+    protected void onDetach(DetachEvent detachEvent) {
+        if (resizeRegistration != null) {
+            resizeRegistration.remove();
+            resizeRegistration = null;
+        }
+        super.onDetach(detachEvent);
+    }
+
+    private void rescale() {
+        if (plan == null || availableWidthPx <= 0) {
+            return;
+        }
+        int fitting = (availableWidthPx - LANE_LABEL_WIDTH_PX) / Math.max(1, chartEndMinutes());
+        int scale = Math.clamp(fitting, MIN_PIXELS_PER_MINUTE, MAX_PIXELS_PER_MINUTE);
+        if (scale != pixelsPerMinute) {
+            pixelsPerMinute = scale;
+            render();
+        }
     }
 
     /**
@@ -95,6 +145,7 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
         this.onChange = onChange;
         rebuildByLane();
         render();
+        rescale();
     }
 
     private void rebuildByLane() {
@@ -225,6 +276,7 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
 
         plan = currentSnapshot();
         render();
+        rescale();
         if (onChange != null) {
             onChange.accept(plan);
         }
@@ -256,7 +308,8 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
         return v == null ? 0 : v;
     }
 
-    private int chartSpanMinutes() {
+    /** Minutes from the origin to where the last item box ends. */
+    private int chartEndMinutes() {
         int max = 0;
         for (var entry : byLane.entrySet()) {
             int cursor = laneOffsetMinutes(entry.getKey());
@@ -265,11 +318,8 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
                 if (!first) {
                     cursor += plan.gapBetweenItemsInSteps() * item.stepMinutes();
                 }
-                int lastStartMinutes = cursor + (item.unitCount() - 1) * item.stepMinutes();
-                if (lastStartMinutes > max) {
-                    max = lastStartMinutes;
-                }
                 cursor += item.unitCount() * item.stepMinutes();
+                max = Math.max(max, cursor);
                 first = false;
             }
         }
@@ -300,17 +350,19 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
             setPadding(false);
             VSpan label = new VSpan("Time");
             label.getStyle().setWidthPx(LANE_LABEL_WIDTH_PX);
+            label.getStyle().setFlexShrink("0");
             add(label, new TimeAxisTrack());
         }
     }
 
     private class TimeAxisTrack extends VDiv {
         TimeAxisTrack() {
-            int spanMinutes = chartSpanMinutes() + 1;
+            int spanMinutes = chartEndMinutes();
             VStyle style = getStyle();
             style.setPosition(Style.Position.RELATIVE);
             style.setHeightPx(20);
-            style.setWidthPx(spanMinutes * PIXELS_PER_MINUTE);
+            style.setFlexShrink("0");
+            style.setWidthPx(spanMinutes * pixelsPerMinute);
             for (int m = 0; m <= spanMinutes; m += 5) {
                 add(new TimeTick(m));
             }
@@ -322,7 +374,7 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
             super(plan.origin().plusMinutes(minute).toString());
             VStyle style = getStyle();
             style.setPosition(Style.Position.ABSOLUTE);
-            style.setLeftPx(minute * PIXELS_PER_MINUTE);
+            style.setLeftPx(minute * pixelsPerMinute);
             style.setFontSize("11px");
         }
     }
@@ -336,6 +388,7 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
 
             VSpan label = new VSpan(laneId);
             label.getStyle().setWidthPx(LANE_LABEL_WIDTH_PX);
+            label.getStyle().setFlexShrink("0");
             add(label, new LaneTrack(laneId));
         }
     }
@@ -356,7 +409,8 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
             style.setPosition(Style.Position.RELATIVE);
             style.setHeightPx(LANE_HEIGHT_PX);
             style.setBackgroundColor(LANE_TRACK_BG);
-            style.setMinWidthPx(400);
+            style.setFlexShrink("0");
+            style.setWidthPx(chartEndMinutes() * pixelsPerMinute);
 
             setActive(true);
             setDropEffect(DropEffect.MOVE);
@@ -436,7 +490,7 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
             if (lane.isEmpty()) {
                 return 0;
             }
-            int cursorMinutes = offsetX / PIXELS_PER_MINUTE;
+            int cursorMinutes = offsetX / pixelsPerMinute;
             int rendererCursor = laneOffsetMinutes(laneId);
             boolean first = true;
             int index = 0;
@@ -476,9 +530,9 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
             getElement().setAttribute("title", tooltipFor(item));
             VStyle style = getStyle();
             style.setPosition(Style.Position.ABSOLUTE);
-            style.setLeftPx(firstStartMinutes * PIXELS_PER_MINUTE);
+            style.setLeftPx(firstStartMinutes * pixelsPerMinute);
             style.setTopPx(2);
-            style.setWidthPx(widthMinutes * PIXELS_PER_MINUTE);
+            style.setWidthPx(widthMinutes * pixelsPerMinute);
             style.setHeightPx(LANE_HEIGHT_PX - ITEM_BOX_INSET_PX);
             style.setBackgroundColor(colorFor(item));
             style.setBorder("1px solid " + ITEM_BORDER);
