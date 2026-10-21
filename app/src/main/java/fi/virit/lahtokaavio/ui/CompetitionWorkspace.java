@@ -9,6 +9,7 @@ import fi.virit.lahtokaavio.domain.Series;
 import fi.virit.lahtokaavio.domain.StartDraw;
 import fi.virit.lahtokaavio.domain.StartPlan;
 import fi.virit.lahtokaavio.domain.WorkspaceSnapshot;
+import fi.virit.lahtokaavio.plan.CourseMatcher;
 import fi.virit.lahtokaavio.plan.StartPlanGenerator;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -179,8 +180,9 @@ public class CompetitionWorkspace {
 
     /**
      * Builds {@link Series} from the current counts and runs the planner.
-     * Classes without a known course are returned separately so the caller
-     * can warn the user.
+     * Open classes may borrow the course of their age class (see
+     * {@link CourseMatcher}). Classes without a known course are returned
+     * separately so the caller can warn the user.
      *
      * @return list of class names that had no matching course (empty if all matched)
      */
@@ -193,12 +195,9 @@ public class CompetitionWorkspace {
             if (count == null || count <= 0) {
                 return;
             }
-            Course course = coursesByClass.get(className);
-            if (course == null) {
-                missing.add(className);
-            } else {
-                series.add(new Series(className, course, count, interval));
-            }
+            CourseMatcher.find(coursesByClass, className).ifPresentOrElse(
+                    course -> series.add(new Series(className, course, count, interval)),
+                    () -> missing.add(className));
         });
 
         setPlan(generator.generate(series, parameters));

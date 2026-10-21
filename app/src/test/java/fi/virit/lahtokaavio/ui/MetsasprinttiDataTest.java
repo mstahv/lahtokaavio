@@ -8,8 +8,10 @@ import com.vaadin.flow.component.notification.NotificationLocator;
 import fi.virit.lahtokaavio.domain.DrawnStart;
 import fi.virit.lahtokaavio.domain.SeriesStart;
 import fi.virit.lahtokaavio.ui.helpers.SampleData;
+import in.virit.vlp.VisualLanePlanner;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalTime;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,21 +43,32 @@ class MetsasprinttiDataTest {
     void organiserGeneratesAPlanFromPurplePenAndIrmaFiles() {
         generatePlan();
 
-        // The registrations have "10 Avoin", the courses only "14 Avoin".
-        // Every other class is found.
-        assertThat(problemText()).isEqualTo("Warning: no course found for [10 Avoin]");
-        window.findButton().withText("OK").inside(problem()).click();
+        // There is no "10 Avoin" course, but it runs the course of D10 and H10
         assertThat(problemShown()).isFalse();
-
         window.navigate(GridAndDownloadView.class);
-        // 32 classes in the CSV, one of them without a course
-        assertThat(window.findGrid(SeriesStart.class).size()).isEqualTo(31);
+        assertThat(window.findGrid(SeriesStart.class).size()).isEqualTo(32);
+
+        // Open classes start last
+        List<SeriesStart> starts = CompetitionWorkspace.current().plan().seriesStarts();
+        LocalTime othersEnd = starts.stream().filter(s -> !s.seriesName().endsWith("Avoin"))
+                .map(SeriesStart::lastStartTime).max(LocalTime::compareTo).orElseThrow();
+        assertThat(starts).filteredOn(s -> s.seriesName().endsWith("Avoin"))
+                .extracting(SeriesStart::seriesName).containsExactly("10 Avoin");
+        assertThat(starts).filteredOn(s -> s.seriesName().endsWith("Avoin"))
+                .allSatisfy(s -> assertThat(s.firstStartTime()).isAfter(othersEnd));
+
+        // The Gantt view shows the open class at its real time, too
+        window.navigate(GanttView.class);
+        VisualLanePlanner planner = window.find(VisualLanePlanner.class).single();
+        for (SeriesStart s : starts) {
+            assertThat(planner.firstStartOf(s.seriesName())).as(s.seriesName())
+                    .isEqualTo(s.firstStartTime());
+        }
     }
 
     @Test
     void organiserDrawsStartTimesAndDownloadsTheStartList() {
         generatePlan();
-        window.findButton().withText("OK").inside(problem()).click();
 
         window.navigate(DrawView.class);
         assertThat(window.findButton().withText("Draw start times").component().isEnabled()).isFalse();
@@ -65,21 +78,21 @@ class MetsasprinttiDataTest {
 
         window.findButton().withText("Draw start times").click();
 
-        // Late entries after the counts were exported, and the class without a course
+        // Late entries after the counts were exported
         String warning = problemText();
         assertThat(warning).contains("More entries than planned starts in")
                 .contains("D12").contains("D14").contains("H10")
-                .contains("No starts planned for 10 Avoin");
+                .doesNotContain("No starts planned");
         window.findButton().withText("OK").inside(problem()).click();
 
-        // Everyone but the three "10 Avoin" competitors is in the list
-        assertThat(window.findGrid(DrawnStart.class).size()).isEqualTo(140);
+        // Everyone is in the list
+        assertThat(window.findGrid(DrawnStart.class).size()).isEqualTo(143);
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         window.findAnchor().withText("Download start list (CSV)").download(out);
         List<String> lines = out.toString(StandardCharsets.UTF_8).lines().toList();
         assertThat(lines.getFirst()).isEqualTo("Sarja;Lähtöaika;Nimi;Seura;Emit;Lisenssi;Jono");
-        assertThat(lines).hasSize(1 + 140);
+        assertThat(lines).hasSize(1 + 143);
         assertThat(lines).anyMatch(line -> line.startsWith("H21;")
                 && line.contains(";Arola Topias;Sweden;536400;3094;"));
     }

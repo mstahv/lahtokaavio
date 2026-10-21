@@ -52,6 +52,34 @@ class StartPlanGeneratorTest {
     }
 
     @Test
+    void openClassesStartAfterAllOtherClassesOnLanesOfTheirOwn() {
+        List<Series> series = List.of(
+                new Series("10 Avoin", courseWithControl("STA1", "C1"), 3, 2),
+                new Series("H21", courseWithControl("STA1", "C2"), 10, 2),
+                new Series("D21", courseWithControl("STA1", "C3"), 4, 2),
+                new Series("Kunto", courseWithControl("STA2", "C4"), 6, 2));
+
+        StartPlan plan = generator.generate(series, CompetitionParameters.defaults());
+
+        SeriesStart open = byName(plan, "10 Avoin");
+        LocalTime othersEnd = plan.seriesStarts().stream()
+                .filter(s -> !s.seriesName().equals("10 Avoin"))
+                .map(SeriesStart::lastStartTime)
+                .max(LocalTime::compareTo).orElseThrow();
+        // First free start after the others' last start (interval 2 min)
+        assertThat(open.firstStartTime()).isEqualTo(othersEnd.plusMinutes(2));
+        assertThat(open.lastStartTime()).isEqualTo(open.firstStartTime().plusMinutes(4));
+        // Same start place, a lane no other class uses
+        assertThat(open.laneId()).startsWith("STA1-");
+        assertThat(plan.seriesStarts()).filteredOn(s -> s.laneId().equals(open.laneId())).hasSize(1);
+    }
+
+    private static SeriesStart byName(StartPlan plan, String name) {
+        return plan.seriesStarts().stream().filter(s -> s.seriesName().equals(name))
+                .findFirst().orElseThrow();
+    }
+
+    @Test
     void differentStartPlacesPlanIndependently() {
         Course main = course("1", "STA1");
         Course kunto = course("Kunto", "STA2");

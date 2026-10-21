@@ -58,7 +58,53 @@ public final class StartPlanGenerator {
      */
     private static final int MAX_LANE_START_DELAY_MINUTES = 20;
 
+    /**
+     * Plans all series. Open classes ("avoin", see
+     * {@link CourseMatcher#isOpenClass}) start after every other class: they
+     * are planned separately, from the first free start after the others'
+     * last start, on lanes of their own numbered after the other lanes of the
+     * start place.
+     */
     public StartPlan generate(List<Series> series, CompetitionParameters parameters) {
+        List<Series> regular = series.stream().filter(s -> !CourseMatcher.isOpenClass(s.name())).toList();
+        List<Series> open = series.stream().filter(s -> CourseMatcher.isOpenClass(s.name())).toList();
+
+        List<SeriesStart> placements = new ArrayList<>(plan(regular, parameters));
+        if (!open.isEmpty()) {
+            LocalTime regularEnd = placements.stream().map(SeriesStart::lastStartTime)
+                    .max(LocalTime::compareTo).orElse(null);
+            CompetitionParameters openParameters = regularEnd == null ? parameters
+                    : new CompetitionParameters(
+                            regularEnd.plusMinutes(parameters.defaultStartIntervalMinutes()),
+                            parameters.defaultStartIntervalMinutes(),
+                            parameters.gapSlotsBetweenSeries(),
+                            parameters.maxStartersPerMinutePerStartPlace(),
+                            parameters.allowSplittingFirstControlGroups());
+            Map<String, Integer> lanesInUse = new LinkedHashMap<>();
+            for (SeriesStart p : placements) {
+                lanesInUse.merge(lanePrefix(p.laneId()), laneNumber(p.laneId()), Math::max);
+            }
+            for (SeriesStart p : plan(open, openParameters)) {
+                String prefix = lanePrefix(p.laneId());
+                String laneId = prefix + "-" + (lanesInUse.getOrDefault(prefix, 0) + laneNumber(p.laneId()));
+                placements.add(new SeriesStart(p.seriesName(), p.firstStartTime(), p.lastStartTime(),
+                        laneId, p.competitors(), p.startIntervalMinutes(), p.controlCodes()));
+            }
+        }
+        placements.sort(Comparator.comparing(SeriesStart::laneId, LANE_ID_NATURAL)
+                .thenComparing(SeriesStart::firstStartTime));
+        return new StartPlan(parameters, placements);
+    }
+
+    private static String lanePrefix(String laneId) {
+        return laneId.substring(0, laneId.lastIndexOf('-'));
+    }
+
+    private static int laneNumber(String laneId) {
+        return Integer.parseInt(laneId.substring(laneId.lastIndexOf('-') + 1));
+    }
+
+    private List<SeriesStart> plan(List<Series> series, CompetitionParameters parameters) {
         Map<StartPlace, List<Series>> seriesByStartPlace = new LinkedHashMap<>();
         for (Series s : series) {
             seriesByStartPlace
@@ -70,9 +116,7 @@ public final class StartPlanGenerator {
         for (Map.Entry<StartPlace, List<Series>> entry : seriesByStartPlace.entrySet()) {
             packStartPlace(entry.getKey(), entry.getValue(), parameters, placements);
         }
-        placements.sort(Comparator.comparing(SeriesStart::laneId, LANE_ID_NATURAL)
-                .thenComparing(SeriesStart::firstStartTime));
-        return new StartPlan(parameters, placements);
+        return placements;
     }
 
     /**
