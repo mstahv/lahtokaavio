@@ -33,6 +33,28 @@ class RegistrationsCsvReaderTest {
     }
 
     @Test
+    void readsIrmaExportInUtf8WithByteOrderMark() throws Exception {
+        try (InputStream in = getClass().getResourceAsStream(
+                "/metsasprintti/ilmoittautumiset-irmasta-mp.csv")) {
+            Registrations registrations = reader.read(in);
+            assertThat(registrations.dayLabels()).containsExactly("Päivä #1");
+
+            Map<String, Integer> day1 = registrations.countsForDay("Päivä #1");
+            assertThat(day1).containsEntry("10 Avoin", 3).containsEntry("H21", 14);
+            assertThat(day1).doesNotContainKey("Yhteensä");
+            assertThat(day1.values().stream().mapToInt(Integer::intValue).sum()).isEqualTo(140);
+        }
+    }
+
+    @Test
+    void stripsByteOrderMarkWithExplicitCharset() {
+        String csv = "\uFEFFSarja;Päivä #1\nD14;5\n";
+        Registrations r = reader.read(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)),
+                StandardCharsets.UTF_8);
+        assertThat(r.countsForDay("Päivä #1")).containsEntry("D14", 5);
+    }
+
+    @Test
     void parsesMultiDayCsv() {
         String csv = """
                 Sarja;Päivä #1;Päivä #2;Koko tapahtuma

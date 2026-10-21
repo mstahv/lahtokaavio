@@ -2,10 +2,15 @@ package fi.virit.lahtokaavio.io;
 
 import fi.virit.lahtokaavio.domain.Registrations;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -24,8 +29,10 @@ import java.util.Map;
  *   <li>The "Yhteensä" total row — a hand-maintained sum, not entry data.</li>
  * </ul>
  *
- * The CSV files exported from the Pirilä / IRMA tooling that the orienteering
- * community uses are typically Windows-1252 encoded — see {@link #DEFAULT_CHARSET}.
+ * The encoding is detected: Pirilä exports are typically Windows-1252
+ * ({@link #DEFAULT_CHARSET}), while IRMA exports are UTF-8 with a byte order
+ * mark. Input that is valid UTF-8 is read as UTF-8, anything else as
+ * Windows-1252.
  */
 @org.springframework.stereotype.Component
 public final class RegistrationsCsvReader {
@@ -35,9 +42,32 @@ public final class RegistrationsCsvReader {
     private static final String CLASS_COLUMN_HEADER = "Sarja";
     private static final String TOTAL_ROW_LABEL = "Yhteensä";
     private static final String ENTIRE_EVENT_COLUMN = "Koko tapahtuma";
+    private static final String BYTE_ORDER_MARK = "\uFEFF";
+
+    /**
+     * UTF-8 if the bytes decode as UTF-8 (with or without a byte order mark),
+     * otherwise {@link #DEFAULT_CHARSET}. Windows-1252 text with Finnish
+     * letters is practically never valid UTF-8.
+     */
+    static Charset detectCharset(byte[] bytes) {
+        try {
+            StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT)
+                    .decode(ByteBuffer.wrap(bytes));
+            return StandardCharsets.UTF_8;
+        } catch (CharacterCodingException e) {
+            return DEFAULT_CHARSET;
+        }
+    }
 
     public Registrations read(InputStream input) {
-        return read(input, DEFAULT_CHARSET);
+        try {
+            byte[] bytes = input.readAllBytes();
+            return read(new ByteArrayInputStream(bytes), detectCharset(bytes));
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to read registrations CSV", e);
+        }
     }
 
     public Registrations read(InputStream input, Charset charset) {
@@ -45,6 +75,9 @@ public final class RegistrationsCsvReader {
             String headerLine = reader.readLine();
             if (headerLine == null) {
                 throw new IllegalArgumentException("Registrations CSV is empty");
+            }
+            if (headerLine.startsWith(BYTE_ORDER_MARK)) {
+                headerLine = headerLine.substring(1);
             }
             List<DayColumn> dayColumns = parseHeader(headerLine);
 

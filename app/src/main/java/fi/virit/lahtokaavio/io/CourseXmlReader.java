@@ -225,9 +225,17 @@ public final class CourseXmlReader {
 
     // --- Shared helpers --------------------------------------------------
 
+    /**
+     * Splits a course name into class names. Purple Pen style names list the
+     * classes separated by a comma and a space ({@code "D14, H14, 14 Avoin"}),
+     * so class names may contain spaces; older files separate them with
+     * whitespace only ({@code "D10 H10"}). A comma without a space after it
+     * ({@code "Kunto 1,5"}) is not a separator.
+     */
     private List<String> splitTokens(String raw) {
+        String separator = raw.matches(".*,\\s.*") ? "\\s*,\\s+" : "\\s+";
         List<String> names = new ArrayList<>();
-        for (String token : raw.trim().split("\\s+")) {
+        for (String token : raw.trim().split(separator)) {
             if (!token.isBlank()) {
                 names.add(token);
             }

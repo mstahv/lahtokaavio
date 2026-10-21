@@ -55,6 +55,17 @@ class CourseXmlReaderTest {
     }
 
     @Test
+    void readsCommaSeparatedClassListsInCourseNames() throws Exception {
+        Map<String, Course> coursesByClass = readResource("/metsasprintti/Metsasprintti-26.xml");
+
+        // Course "D14, H14, 14 Avoin": no trailing commas, and the
+        // class name with a space stays in one piece.
+        assertThat(coursesByClass).containsKeys("D14", "H14", "14 Avoin");
+        assertThat(coursesByClass.get("D14")).isSameAs(coursesByClass.get("14 Avoin"));
+        assertThat(coursesByClass.keySet()).noneMatch(name -> name.endsWith(","));
+    }
+
+    @Test
     void differentStartPlacesAreDistinct() throws Exception {
         Map<String, Course> coursesByClass = readResource("/demo/Viking-Line-L1.xml");
         // "Kunto" courses use STA2 in L1
