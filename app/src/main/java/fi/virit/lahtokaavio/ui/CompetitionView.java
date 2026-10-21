@@ -176,6 +176,9 @@ public class CompetitionView extends VerticalLayout implements AfterNavigationOb
         if (!sessionRoutes.isRouteRegistered(GanttView.class)) {
             sessionRoutes.setAnnotatedRoute(GanttView.class);
         }
+        if (!sessionRoutes.isRouteRegistered(DrawView.class)) {
+            sessionRoutes.setAnnotatedRoute(DrawView.class);
+        }
         findAncestor(TopLayout.class).buildMenu();
     }
 

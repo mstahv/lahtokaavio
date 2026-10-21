@@ -3,8 +3,10 @@ package fi.virit.lahtokaavio.ui;
 import com.vaadin.flow.server.VaadinSession;
 import fi.virit.lahtokaavio.domain.CompetitionParameters;
 import fi.virit.lahtokaavio.domain.Course;
+import fi.virit.lahtokaavio.domain.Entry;
 import fi.virit.lahtokaavio.domain.Registrations;
 import fi.virit.lahtokaavio.domain.Series;
+import fi.virit.lahtokaavio.domain.StartDraw;
 import fi.virit.lahtokaavio.domain.StartPlan;
 import fi.virit.lahtokaavio.domain.WorkspaceSnapshot;
 import fi.virit.lahtokaavio.plan.StartPlanGenerator;
@@ -50,6 +52,10 @@ public class CompetitionWorkspace {
 
     private CompetitionParameters parameters = CompetitionParameters.defaults();
     private StartPlan plan;
+
+    /** Named competitors for the draw, loaded after the plan is made. */
+    private List<Entry> entries = List.of();
+    private StartDraw draw;
 
     public CompetitionWorkspace(StartPlanGenerator generator) {
         this.generator = generator;
@@ -109,8 +115,27 @@ public class CompetitionWorkspace {
         return plan;
     }
 
+    /** Changing the plan moves the start slots, so an earlier draw is discarded. */
     public void setPlan(StartPlan plan) {
         this.plan = plan;
+        this.draw = null;
+    }
+
+    public void setEntries(List<Entry> entries) {
+        this.entries = List.copyOf(entries);
+        this.draw = null;
+    }
+
+    public List<Entry> entries() {
+        return entries;
+    }
+
+    public StartDraw draw() {
+        return draw;
+    }
+
+    public void setDraw(StartDraw draw) {
+        this.draw = draw;
     }
 
     /**
@@ -126,6 +151,8 @@ public class CompetitionWorkspace {
         selectedDay = null;
         parameters = CompetitionParameters.defaults();
         plan = null;
+        entries = List.of();
+        draw = null;
     }
 
     /**
@@ -146,7 +173,7 @@ public class CompetitionWorkspace {
         selectedDay = snapshot.selectedDay();
         parameters = snapshot.parameters() != null
                 ? snapshot.parameters() : CompetitionParameters.defaults();
-        plan = snapshot.plan();
+        setPlan(snapshot.plan());
         registrations = null; // user can re-upload CSV if they want to switch day
     }
 
@@ -174,7 +201,7 @@ public class CompetitionWorkspace {
             }
         });
 
-        plan = generator.generate(series, parameters);
+        setPlan(generator.generate(series, parameters));
         return missing;
     }
 }
