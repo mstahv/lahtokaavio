@@ -100,6 +100,38 @@ class MetsasprinttiDataTest {
         assertThat(lines).hasSize(1 + 143);
         assertThat(lines).anyMatch(line -> line.startsWith("H21;")
                 && line.contains(";Arola Topias;Sweden;536400;3094;"));
+
+        // The same draw for Navisport's participant import
+        window.findCheckbox().withLabel("Navisport format").check();
+        out = new ByteArrayOutputStream();
+        window.findAnchor().withText("Download start list (CSV)").download(out);
+        lines = out.toString(StandardCharsets.UTF_8).lines().toList();
+        assertThat(lines.getFirst())
+                .isEqualTo("Nimi,Kilpailukortti,Seura,Sarja,Lähtöaika,Lisenssinumero");
+        assertThat(lines).hasSize(1 + 143);
+        assertThat(lines).anyMatch(line -> line.matches(
+                "Topias Arola,536400,Sweden,H21,\\d\\d:\\d\\d:00,3094"));
+    }
+
+    @Test
+    void organiserLetsNavisportDrawFromTheStartScheme() {
+        generatePlan();
+        window.findButton().withText("OK").inside(problem()).click();
+        window.navigate(GridAndDownloadView.class);
+
+        window.findCheckbox().withLabel("Navisport format").check();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        window.findAnchor().withText("Download CSV").download(out);
+
+        // One row per class, no header: class, first start, interval in seconds
+        List<String> lines = out.toString(StandardCharsets.UTF_8).lines().toList();
+        List<SeriesStart> starts = CompetitionWorkspace.current().plan().seriesStarts();
+        assertThat(lines).hasSize(starts.size());
+        SeriesStart open = starts.stream()
+                .filter(s -> s.seriesName().equals("10 Avoin")).findFirst().orElseThrow();
+        assertThat(lines).contains("10 Avoin," + open.firstStartTime()
+                + "," + open.startIntervalMinutes() * 60);
+        assertThat(lines).allMatch(line -> line.matches("[^,]+,\\d\\d:\\d\\d,\\d+"));
     }
 
     private void generatePlan() {

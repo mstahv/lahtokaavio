@@ -2,6 +2,7 @@ package fi.virit.lahtokaavio.ui;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.H2;
@@ -21,6 +22,7 @@ import fi.virit.lahtokaavio.domain.DrawnStart;
 import fi.virit.lahtokaavio.domain.Entry;
 import fi.virit.lahtokaavio.domain.StartDraw;
 import fi.virit.lahtokaavio.io.EntriesCsvReader;
+import fi.virit.lahtokaavio.io.NavisportCsvWriter;
 import fi.virit.lahtokaavio.io.StartListCsvWriter;
 import fi.virit.lahtokaavio.plan.StartTimeDraw;
 import java.io.ByteArrayInputStream;
@@ -41,20 +43,23 @@ public class DrawView extends VerticalLayout implements BeforeEnterObserver {
 
     private final EntriesCsvReader entriesReader = new EntriesCsvReader();
     private final StartListCsvWriter startListWriter = new StartListCsvWriter();
+    private final NavisportCsvWriter navisportWriter = new NavisportCsvWriter();
 
     private final Span entriesStatus = new Span();
     private final Button drawButton = new Button("Draw start times", e -> draw());
     private final Anchor download = new StartListDownload();
+    private final Checkbox navisportFormat = new Checkbox("Navisport format");
     private final DrawnStartGrid grid = new DrawnStartGrid();
 
     public DrawView() {
         setSizeFull();
         add(new H2("Arvonta"));
         add(new Paragraph("Upload the entries exported from IRMA (ilmoittautuneet.csv) and "
-                + "draw the start order within each class. Drawing again gives a new order."));
+                + "draw the start order within each class. Drawing again gives a new order. "
+                + "With Navisport format the list can be imported to Navisport's participant data."));
         add(new EntriesUpload(), entriesStatus);
         drawButton.addThemeVariants(ButtonVariant.PRIMARY);
-        add(new HorizontalLayout(drawButton, download), grid);
+        add(new HorizontalLayout(drawButton, download, navisportFormat), grid);
     }
 
     @Override
@@ -115,10 +120,16 @@ public class DrawView extends VerticalLayout implements BeforeEnterObserver {
         grid.setItems(starts);
         grid.setVisible(draw != null);
         download.setVisible(draw != null);
+        navisportFormat.setVisible(draw != null);
         download.setHref(event -> {
-            event.setFileName("lahtoluettelo.csv");
             event.setContentType("text/csv");
-            startListWriter.writeBytes(starts, event.getOutputStream());
+            if (navisportFormat.getValue()) {
+                event.setFileName("lahtoluettelo-navisport.csv");
+                navisportWriter.writeStartList(starts, event.getOutputStream());
+            } else {
+                event.setFileName("lahtoluettelo.csv");
+                startListWriter.writeBytes(starts, event.getOutputStream());
+            }
         });
     }
 

@@ -1,5 +1,6 @@
 package fi.virit.lahtokaavio.ui;
 
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -10,6 +11,7 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.Route;
 import fi.virit.lahtokaavio.domain.StartPlan;
 import fi.virit.lahtokaavio.domain.WorkspaceSnapshot;
+import fi.virit.lahtokaavio.io.NavisportCsvWriter;
 import fi.virit.lahtokaavio.io.StartPlanCsvWriter;
 import org.vaadin.firitin.appframework.MenuItem;
 import tools.jackson.databind.ObjectMapper;
@@ -26,9 +28,11 @@ import tools.jackson.databind.ObjectMapper;
 public class GridAndDownloadView extends VerticalLayout implements BeforeEnterObserver {
 
     private final StartPlanCsvWriter csvWriter = new StartPlanCsvWriter();
+    private final NavisportCsvWriter navisportWriter = new NavisportCsvWriter();
     private final StartPlanGrid grid = new StartPlanGrid();
     private final Anchor csvDownload = new Anchor();
     private final Anchor jsonDownload = new Anchor();
+    private final Checkbox navisportFormat = new NavisportFormatCheckbox();
 
     public GridAndDownloadView() {
         setSizeFull();
@@ -36,7 +40,7 @@ public class GridAndDownloadView extends VerticalLayout implements BeforeEnterOb
 
         csvDownload.setText("Download CSV");
         jsonDownload.setText("Download Backup (JSON)");
-        add(new HorizontalLayout(csvDownload, jsonDownload), grid);
+        add(new HorizontalLayout(csvDownload, navisportFormat, jsonDownload), grid);
     }
 
     @Override
@@ -54,9 +58,14 @@ public class GridAndDownloadView extends VerticalLayout implements BeforeEnterOb
         grid.setItems(plan.seriesStarts());
         csvDownload.setDownload(true);
         csvDownload.setHref(event -> {
-            event.setFileName("lahtokaavio.csv");
             event.setContentType("text/csv");
-            csvWriter.writeBytes(plan, event.getOutputStream());
+            if (navisportFormat.getValue()) {
+                event.setFileName("lahtoaikataulu-navisport.csv");
+                navisportWriter.writeStartScheme(plan, event.getOutputStream());
+            } else {
+                event.setFileName("lahtokaavio.csv");
+                csvWriter.writeBytes(plan, event.getOutputStream());
+            }
         });
 
         jsonDownload.setDownload(true);
@@ -64,5 +73,14 @@ public class GridAndDownloadView extends VerticalLayout implements BeforeEnterOb
             event.setContentType("application/json");
             new ObjectMapper().writeValue(event.getOutputStream(), snapshot);
         });
+    }
+
+    /** Navisport's start scheme: Navisport then draws the start times itself. */
+    private static class NavisportFormatCheckbox extends Checkbox {
+        NavisportFormatCheckbox() {
+            super("Navisport format");
+            setTooltipText("Class, first start and interval, for Navisport's start scheme "
+                    + "import. Navisport can then draw the start times.");
+        }
     }
 }
