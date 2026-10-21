@@ -43,7 +43,11 @@ class MetsasprinttiDataTest {
     void organiserGeneratesAPlanFromPurplePenAndIrmaFiles() {
         generatePlan();
 
-        // There is no "10 Avoin" course, but it runs the course of D10 and H10
+        // There is no "10 Avoin" course, but it runs the course of D10 and H10.
+        // An assumption to check, so the user has to acknowledge it.
+        assertThat(problemText())
+                .isEqualTo("10 Avoin has no course of its own, using course \"D10, H10\".");
+        window.findButton().withText("OK").inside(problem()).click();
         assertThat(problemShown()).isFalse();
         window.navigate(GridAndDownloadView.class);
         assertThat(window.findGrid(SeriesStart.class).size()).isEqualTo(32);
@@ -69,6 +73,7 @@ class MetsasprinttiDataTest {
     @Test
     void organiserDrawsStartTimesAndDownloadsTheStartList() {
         generatePlan();
+        window.findButton().withText("OK").inside(problem()).click();
 
         window.navigate(DrawView.class);
         assertThat(window.findButton().withText("Draw start times").component().isEnabled()).isFalse();

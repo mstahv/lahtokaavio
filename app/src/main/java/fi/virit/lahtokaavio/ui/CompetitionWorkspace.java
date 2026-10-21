@@ -4,6 +4,7 @@ import com.vaadin.flow.server.VaadinSession;
 import fi.virit.lahtokaavio.domain.CompetitionParameters;
 import fi.virit.lahtokaavio.domain.Course;
 import fi.virit.lahtokaavio.domain.Entry;
+import fi.virit.lahtokaavio.domain.PlanReport;
 import fi.virit.lahtokaavio.domain.Registrations;
 import fi.virit.lahtokaavio.domain.Series;
 import fi.virit.lahtokaavio.domain.StartDraw;
@@ -181,26 +182,28 @@ public class CompetitionWorkspace {
     /**
      * Builds {@link Series} from the current counts and runs the planner.
      * Open classes may borrow the course of their age class (see
-     * {@link CourseMatcher}). Classes without a known course are returned
-     * separately so the caller can warn the user.
-     *
-     * @return list of class names that had no matching course (empty if all matched)
+     * {@link CourseMatcher}). Both those and the classes without a known
+     * course are reported so the caller can tell the user.
      */
-    public List<String> regeneratePlan() {
+    public PlanReport regeneratePlan() {
         List<Series> series = new ArrayList<>();
         List<String> missing = new ArrayList<>();
+        Map<String, String> borrowed = new LinkedHashMap<>();
         int interval = parameters.defaultStartIntervalMinutes();
 
         counts.forEach((className, count) -> {
             if (count == null || count <= 0) {
                 return;
             }
-            CourseMatcher.find(coursesByClass, className).ifPresentOrElse(
-                    course -> series.add(new Series(className, course, count, interval)),
-                    () -> missing.add(className));
+            CourseMatcher.find(coursesByClass, className).ifPresentOrElse(course -> {
+                series.add(new Series(className, course, count, interval));
+                if (!coursesByClass.containsKey(className)) {
+                    borrowed.put(className, course.name());
+                }
+            }, () -> missing.add(className));
         });
 
         setPlan(generator.generate(series, parameters));
-        return missing;
+        return new PlanReport(missing, borrowed);
     }
 }

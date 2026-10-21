@@ -27,7 +27,6 @@ import fi.virit.lahtokaavio.io.DemoFiles;
 import fi.virit.lahtokaavio.io.RegistrationsCsvReader;
 import fi.virit.lahtokaavio.io.WorkspaceJsonReader;
 import java.io.ByteArrayInputStream;
-import java.util.List;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.vaadin.firitin.appframework.MenuItem;
@@ -157,10 +156,7 @@ public class CompetitionView extends VerticalLayout implements AfterNavigationOb
     }
 
     private void regenerateAndNavigate() {
-        List<String> missing = CompetitionWorkspace.current().regeneratePlan();
-        if (!missing.isEmpty()) {
-            ProblemNotification.warning("Warning: no course found for " + missing);
-        }
+        ProblemNotification.showPlanReport(CompetitionWorkspace.current().regeneratePlan());
         registerSessionRoutes();
         UI.getCurrent().navigate(GanttView.class);
     }

@@ -14,7 +14,6 @@ import com.vaadin.flow.router.Route;
 import org.vaadin.firitin.appframework.MenuItem;
 
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -56,10 +55,7 @@ public class EditCountsView extends VerticalLayout implements BeforeEnterObserve
     private void apply() {
         CompetitionWorkspace workspace = CompetitionWorkspace.current();
         fields.snapshot().forEach(workspace::setCount);
-        List<String> missing = workspace.regeneratePlan();
-        if (!missing.isEmpty()) {
-            ProblemNotification.warning("Warning: no course found for " + missing);
-        }
+        ProblemNotification.showPlanReport(workspace.regeneratePlan());
         UI.getCurrent().navigate(GridAndDownloadView.class);
     }
 
