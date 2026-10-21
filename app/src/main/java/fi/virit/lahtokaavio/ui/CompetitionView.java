@@ -213,7 +213,7 @@ public class CompetitionView extends VerticalLayout implements AfterNavigationOb
             add(new H3("Option A — Upload data files"));
             add(new Paragraph(
                     "Drop in the course XML (one or more files in IOF v2 or v3 format) "
-                    + "and the registrations CSV exported from Pirilä, then click Continue."));
+                    + "and the registrations CSV exported from IRMA, then click Continue."));
 
             Upload coursesUpload = new Upload(UploadHandler.inMemory(
                     (metadata, data) -> onCoursesUploaded(data, metadata.fileName())));
@@ -224,7 +224,7 @@ public class CompetitionView extends VerticalLayout implements AfterNavigationOb
             Upload registrationsUpload = new Upload(UploadHandler.inMemory(
                     (metadata, data) -> onRegistrationsUploaded(data, metadata.fileName())));
             registrationsUpload.setAcceptedFileTypes("text/csv", ".csv");
-            registrationsUpload.setDropLabel(new Paragraph("Registrations CSV"));
+            registrationsUpload.setDropLabel(new Paragraph("Registrations CSV from IRMA"));
 
             HorizontalLayout uploads = new HorizontalLayout(coursesUpload, registrationsUpload);
             uploads.setWidthFull();

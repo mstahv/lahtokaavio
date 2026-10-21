@@ -29,10 +29,10 @@ import java.util.Map;
  *   <li>The "Yhteensä" total row — a hand-maintained sum, not entry data.</li>
  * </ul>
  *
- * The encoding is detected: Pirilä exports are typically Windows-1252
- * ({@link #DEFAULT_CHARSET}), while IRMA exports are UTF-8 with a byte order
- * mark. Input that is valid UTF-8 is read as UTF-8, anything else as
- * Windows-1252.
+ * The file typically comes from IRMA, which exports UTF-8 with a byte
+ * order mark. The encoding is still detected, as older Pirilä-style files
+ * are Windows-1252 ({@link #DEFAULT_CHARSET}): input that is valid UTF-8 is
+ * read as UTF-8, anything else as Windows-1252.
  */
 @org.springframework.stereotype.Component
 public final class RegistrationsCsvReader {
