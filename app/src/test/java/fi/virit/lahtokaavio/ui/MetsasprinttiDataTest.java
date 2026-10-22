@@ -109,6 +109,42 @@ class MetsasprinttiDataTest {
     }
 
     @Test
+    void applyKeepsTheLanesAndTheGanttEditsWhileReoptimizeStartsOver() {
+        generatePlan();
+        window.findButton().withText("OK").inside(problem()).click();
+        window.navigate(GanttView.class);
+        window.find(VisualLanePlanner.class).single().moveItem("H65", "STA1-2", 0);
+        LocalTime h21Before = firstStartOf("H21");
+
+        // Two late entries in H65, now at the head of STA1-2
+        window.navigate(EditCountsView.class);
+        var h65 = window.findIntegerField().withLabel("H65");
+        h65.setValue(h65.component().getValue() + 2);
+        window.findButton().withText("Apply").click();
+
+        assertThat(laneOf("H65")).as("the Gantt edit is kept").isEqualTo("STA1-2");
+        assertThat(firstStartOf("H21")).as("pushed by two H65 starters")
+                .isEqualTo(h21Before.plusMinutes(4));
+
+        window.navigate(EditCountsView.class);
+        window.findButton().withText("Apply and re-optimize").click();
+        assertThat(laneOf("H65")).as("the algorithm's choice again").isEqualTo("STA1-7");
+    }
+
+    private static String laneOf(String series) {
+        return startOf(series).laneId();
+    }
+
+    private static LocalTime firstStartOf(String series) {
+        return startOf(series).firstStartTime();
+    }
+
+    private static SeriesStart startOf(String series) {
+        return CompetitionWorkspace.current().plan().seriesStarts().stream()
+                .filter(s -> s.seriesName().equals(series)).findFirst().orElseThrow();
+    }
+
+    @Test
     void organiserDrawsStartTimesAndDownloadsTheStartList() {
         generatePlan();
         window.findButton().withText("OK").inside(problem()).click();

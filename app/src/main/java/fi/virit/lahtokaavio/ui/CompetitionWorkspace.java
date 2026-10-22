@@ -12,6 +12,7 @@ import fi.virit.lahtokaavio.domain.StartPlan;
 import fi.virit.lahtokaavio.domain.WorkspaceSnapshot;
 import fi.virit.lahtokaavio.plan.CourseMatcher;
 import fi.virit.lahtokaavio.plan.StartPlanGenerator;
+import fi.virit.lahtokaavio.plan.StartPlanRetimer;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -186,6 +187,23 @@ public class CompetitionWorkspace {
      * course are reported so the caller can tell the user.
      */
     public PlanReport regeneratePlan() {
+        PlannedSeries planned = seriesToPlan();
+        setPlan(generator.generate(planned.series(), parameters));
+        return planned.report();
+    }
+
+    /**
+     * Applies the current counts to the plan as it is (also after edits in
+     * the Gantt view): the lanes and the order of the classes stay, they are
+     * only re-timed. See {@link StartPlanRetimer}.
+     */
+    public PlanReport applyCountsKeepingLanes() {
+        PlannedSeries planned = seriesToPlan();
+        setPlan(new StartPlanRetimer().retime(plan, planned.series(), parameters));
+        return planned.report();
+    }
+
+    private PlannedSeries seriesToPlan() {
         List<Series> series = new ArrayList<>();
         List<String> missing = new ArrayList<>();
         Map<String, String> borrowed = new LinkedHashMap<>();
@@ -202,8 +220,9 @@ public class CompetitionWorkspace {
                 }
             }, () -> missing.add(className));
         });
+        return new PlannedSeries(series, new PlanReport(missing, borrowed));
+    }
 
-        setPlan(generator.generate(series, parameters));
-        return new PlanReport(missing, borrowed);
+    private record PlannedSeries(List<Series> series, PlanReport report) {
     }
 }
