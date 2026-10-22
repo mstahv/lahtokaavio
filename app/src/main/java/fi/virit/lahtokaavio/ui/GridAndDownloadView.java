@@ -13,6 +13,7 @@ import fi.virit.lahtokaavio.domain.StartPlan;
 import fi.virit.lahtokaavio.domain.WorkspaceSnapshot;
 import fi.virit.lahtokaavio.io.NavisportCsvWriter;
 import fi.virit.lahtokaavio.io.StartPlanCsvWriter;
+import fi.virit.lahtokaavio.plan.StartPlanValidator;
 import org.vaadin.firitin.appframework.MenuItem;
 import tools.jackson.databind.ObjectMapper;
 
@@ -30,6 +31,7 @@ public class GridAndDownloadView extends VerticalLayout implements BeforeEnterOb
     private final StartPlanCsvWriter csvWriter = new StartPlanCsvWriter();
     private final NavisportCsvWriter navisportWriter = new NavisportCsvWriter();
     private final StartPlanGrid grid = new StartPlanGrid();
+    private final PlanWarningsPanel warnings = new PlanWarningsPanel();
     private final Anchor csvDownload = new Anchor();
     private final Anchor jsonDownload = new Anchor();
     private final Checkbox navisportFormat = new NavisportFormatCheckbox();
@@ -40,7 +42,7 @@ public class GridAndDownloadView extends VerticalLayout implements BeforeEnterOb
 
         csvDownload.setText("Download CSV");
         jsonDownload.setText("Download Backup (JSON)");
-        add(new HorizontalLayout(csvDownload, navisportFormat, jsonDownload), grid);
+        add(warnings, new HorizontalLayout(csvDownload, navisportFormat, jsonDownload), grid);
     }
 
     @Override
@@ -56,6 +58,7 @@ public class GridAndDownloadView extends VerticalLayout implements BeforeEnterOb
     private void show(StartPlan plan) {
         WorkspaceSnapshot snapshot = CompetitionWorkspace.current().snapshot();
         grid.setItems(plan.seriesStarts());
+        warnings.show(new StartPlanValidator().validate(plan));
         csvDownload.setDownload(true);
         csvDownload.setHref(event -> {
             event.setContentType("text/csv");

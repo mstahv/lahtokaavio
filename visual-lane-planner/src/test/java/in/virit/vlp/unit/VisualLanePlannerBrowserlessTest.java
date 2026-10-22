@@ -115,6 +115,22 @@ class VisualLanePlannerBrowserlessTest {
         assertThat(titleOf("b")).contains("first control: 100");
     }
 
+    @Test
+    void itemWarningsOutlineTheBoxesUntilCleared() {
+        VisualLanePlanner planner = window.navigate(BasicVisualLanePlannerUsageUI.class).getPlanner();
+
+        planner.setItemWarnings(Map.of("alpha", "Clashes with gamma"));
+        assertThat(window.findDiv().withAttribute("data-warning").components())
+                .extracting(box -> box.getElement().getAttribute("data-item"))
+                .containsExactly("alpha");
+        assertThat(titleOf("alpha")).endsWith("⚠ Clashes with gamma");
+        assertThat(planner.warningOf("alpha")).isEqualTo("Clashes with gamma");
+
+        planner.setItemWarnings(Map.of());
+        assertThat(window.findDiv().withAttribute("data-warning").exists()).isFalse();
+        assertThat(titleOf("alpha")).doesNotContain("⚠");
+    }
+
     private String titleOf(String itemId) {
         return window.findDiv().withAttribute("data-item", itemId).component()
                 .getElement().getAttribute("title");

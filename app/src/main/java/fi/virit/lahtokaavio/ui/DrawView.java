@@ -26,6 +26,7 @@ import fi.virit.lahtokaavio.io.EntriesCsvReader;
 import fi.virit.lahtokaavio.io.NavisportCsvWriter;
 import fi.virit.lahtokaavio.io.NavisportLanguage;
 import fi.virit.lahtokaavio.io.StartListCsvWriter;
+import fi.virit.lahtokaavio.plan.StartPlanValidator;
 import fi.virit.lahtokaavio.plan.StartTimeDraw;
 import java.io.ByteArrayInputStream;
 import java.security.SecureRandom;
@@ -47,6 +48,7 @@ public class DrawView extends VerticalLayout implements BeforeEnterObserver {
     private final StartListCsvWriter startListWriter = new StartListCsvWriter();
     private final NavisportCsvWriter navisportWriter = new NavisportCsvWriter();
 
+    private final PlanWarningsPanel planWarnings = new PlanWarningsPanel();
     private final Span entriesStatus = new Span();
     private final Button drawButton = new Button("Draw start times", e -> draw());
     private final Anchor download = new StartListDownload();
@@ -55,7 +57,7 @@ public class DrawView extends VerticalLayout implements BeforeEnterObserver {
 
     public DrawView() {
         setSizeFull();
-        add(new H2("Arvonta"));
+        add(new H2("Arvonta"), planWarnings);
         add(new Paragraph("Upload the entries exported from IRMA (ilmoittautuneet.csv), unless "
                 + "they were already given as the registrations, and draw the start order within each class. Drawing again gives a new order. "
                 + "With Navisport format the list can be imported to Navisport's participant data."));
@@ -110,6 +112,7 @@ public class DrawView extends VerticalLayout implements BeforeEnterObserver {
 
     private void refresh() {
         CompetitionWorkspace workspace = CompetitionWorkspace.current();
+        planWarnings.show(new StartPlanValidator().validate(workspace.plan()));
         List<Entry> entries = workspace.entries();
         long classes = entries.stream().map(Entry::className).distinct().count();
         entriesStatus.setText(entries.isEmpty()

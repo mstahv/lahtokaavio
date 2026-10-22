@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.vaadin.browserless.BrowserlessApplicationContext;
 import com.vaadin.browserless.BrowserlessUIContext;
+import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.notification.NotificationLocator;
 import fi.virit.lahtokaavio.domain.DrawnStart;
 import fi.virit.lahtokaavio.domain.SeriesStart;
@@ -69,6 +70,42 @@ class MetsasprinttiDataTest {
             assertThat(planner.firstStartOf(s.seriesName())).as(s.seriesName())
                     .isEqualTo(s.firstStartTime());
         }
+    }
+
+    @Test
+    void draggingASeriesIntoAClashShowsAWarningUntilItIsUndone() {
+        generatePlan();
+        window.findButton().withText("OK").inside(problem()).click();
+        window.navigate(GanttView.class);
+        assertThat(window.find(PlanWarningsPanel.class).exists()).as("the algorithm's plan is fine")
+                .isFalse();
+        VisualLanePlanner planner = window.find(VisualLanePlanner.class).single();
+        String originalLane = planner.laneOf("H65");
+        int originalIndex = planner.itemIds().stream()
+                .filter(id -> originalLane.equals(planner.laneOf(id))).toList().indexOf("H65");
+
+        // H65 heads to the first control 161, like D45 and D50 on its own
+        // lane; at the head of STA1-2 its runners start a minute from theirs.
+        planner.moveItem("H65", "STA1-2", 0);
+
+        PlanWarningsPanel warnings = window.find(PlanWarningsPanel.class).single();
+        assertThat(window.findListItem().inside(warnings).components())
+                .extracting(ListItem::getText)
+                .contains("D45 and H65 start from STA1 to the same first control 161 only 1 min "
+                        + "apart, 2 times between 11:22 and 11:23.");
+        assertThat(planner.warningOf("H65")).contains("D45 and H65");
+        assertThat(planner.warningOf("H21")).isNull();
+
+        // Shown in the other plan views as well
+        window.navigate(GridAndDownloadView.class);
+        assertThat(window.find(PlanWarningsPanel.class).exists()).isTrue();
+
+        // Dragging it back fixes the plan
+        window.navigate(GanttView.class);
+        VisualLanePlanner again = window.find(VisualLanePlanner.class).single();
+        again.moveItem("H65", originalLane, originalIndex);
+        assertThat(window.find(PlanWarningsPanel.class).exists()).isFalse();
+        assertThat(again.warningOf("H65")).isNull();
     }
 
     @Test

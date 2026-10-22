@@ -72,6 +72,7 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
     private static final Color LANE_TRACK_BG = NamedColor.WHITESMOKE;
     private static final Color ITEM_BORDER = NamedColor.DIMGRAY;
     private static final Color DROP_INDICATOR_FILL = NamedColor.DODGERBLUE;
+    private static final Color WARNING_BORDER = NamedColor.CRIMSON;
 
     /**
      * Picks a stable background colour for an item. Items sharing the same
@@ -93,6 +94,7 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
     private Registration resizeRegistration;
     private final LinkedHashMap<String, List<LaneItem>> byLane = new LinkedHashMap<>();
     private Consumer<LanePlan> onChange;
+    private Map<String, String> itemWarnings = Map.of();
 
     public VisualLanePlanner() {
         getContent().setWidthFull();
@@ -163,7 +165,25 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
         }
     }
 
+    /**
+     * Flags items that break a rule of the domain, e.g. a clash the user
+     * created by dragging: the boxes get a red border and the message in
+     * their tooltip. Replaces the earlier warnings; an empty map clears them.
+     */
+    public void setItemWarnings(Map<String, String> warningsByItemId) {
+        Map<String, String> copy = Map.copyOf(warningsByItemId);
+        if (!copy.equals(itemWarnings)) {
+            itemWarnings = copy;
+            render();
+        }
+    }
+
     // --- Tester API -------------------------------------------------------
+
+    /** The warning shown on the item, or {@code null} if there is none. */
+    public String warningOf(String itemId) {
+        return itemWarnings.get(itemId);
+    }
 
     public List<String> laneIds() {
         return new ArrayList<>(byLane.keySet());
@@ -549,7 +569,13 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
             style.setWidthPx(widthMinutes * pixelsPerMinute);
             style.setHeightPx(LANE_HEIGHT_PX - ITEM_BOX_INSET_PX);
             style.setBackgroundColor(colorFor(item));
-            style.setBorder("1px solid " + ITEM_BORDER);
+            String warning = itemWarnings.get(item.id());
+            if (warning == null) {
+                style.setBorder("1px solid " + ITEM_BORDER);
+            } else {
+                style.setBorder("3px solid " + WARNING_BORDER);
+                getElement().setAttribute("data-warning", warning);
+            }
             style.setBorderRadius("3px");
             style.setPadding("0 4px");
             style.setBoxSizing(Style.BoxSizing.BORDER_BOX);
@@ -578,6 +604,10 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
         }
         if (item.tooltipExtra() != null && !item.tooltipExtra().isBlank()) {
             b.append("\n").append(item.tooltipExtra());
+        }
+        String warning = itemWarnings.get(item.id());
+        if (warning != null) {
+            b.append("\n⚠ ").append(warning);
         }
         return b.toString();
     }
