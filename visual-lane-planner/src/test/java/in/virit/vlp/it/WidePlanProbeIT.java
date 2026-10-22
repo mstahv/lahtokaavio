@@ -84,6 +84,12 @@ public class WidePlanProbeIT {
         BoundingBox planner = page.locator("[data-component=visual-lane-planner]").boundingBox();
         assertThat(rightmostItem()).as("still fits after shrinking")
                 .isLessThanOrEqualTo(planner.x + planner.width + 1);
+        assertTimeLabelsDoNotOverlap();
+
+        // A few px per minute: 5-minute ticks would pile up
+        page.setViewportSize(450, 700);
+        page.waitForTimeout(500);
+        assertTimeLabelsDoNotOverlap();
 
         // Too narrow even for the smallest scale: scroll, don't clip
         page.setViewportSize(250, 700);
@@ -91,6 +97,18 @@ public class WidePlanProbeIT {
         Object scrollable = page.locator("[data-component=visual-lane-planner]")
                 .evaluate("el => el.scrollWidth > el.clientWidth");
         assertThat(scrollable).isEqualTo(true);
+    }
+
+    /** On a smaller scale the axis shows fewer ticks, not a pile of labels. */
+    private void assertTimeLabelsDoNotOverlap() {
+        Object overlaps = page.locator("[data-component=visual-lane-planner]").evaluate("""
+                el => {
+                  const labels = Array.from(el.querySelectorAll('[data-time-tick]'))
+                      .map(t => t.getBoundingClientRect());
+                  return labels.some((r, i) => i > 0 && r.left < labels[i - 1].right);
+                }""");
+        assertThat(page.locator("[data-time-tick]").count()).isGreaterThan(1);
+        assertThat(overlaps).as("time labels overlap").isEqualTo(false);
     }
 
     private double rightmostItem() {

@@ -32,4 +32,9 @@ public record LaneItem(
     public LaneItem(String id, String laneId, String label, int stepMinutes, int unitCount) {
         this(id, laneId, label, stepMinutes, unitCount, 0, null);
     }
+
+    /** The same item on another lane, colour key and tooltip extras included. */
+    public LaneItem withLaneId(String laneId) {
+        return new LaneItem(id, laneId, label, stepMinutes, unitCount, colorKey, tooltipExtra);
+    }
 }

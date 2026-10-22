@@ -91,6 +91,35 @@ class VisualLanePlannerBrowserlessTest {
         assertThat(laneTrackOf("alpha")).isEqualTo("LANE-2");
     }
 
+    @Test
+    void movedItemKeepsItsColourAndTooltipExtras() {
+        VisualLanePlanner planner = window.navigate(BasicVisualLanePlannerUsageUI.class).getPlanner();
+        planner.setPlan(new LanePlan(
+                LocalTime.of(11, 0),
+                2,
+                List.of("LANE-1", "LANE-2"),
+                Map.of("LANE-1", 0, "LANE-2", 0),
+                List.of(
+                        new LaneItem("a", "LANE-1", "A", 2, 3, 144, "first control: 144"),
+                        new LaneItem("b", "LANE-1", "B", 2, 3, 100, "first control: 100"))),
+                p -> { });
+        String colorBefore = backgroundColorOf("b");
+
+        // Reorder within the lane, then move across lanes
+        planner.moveItem("b", "LANE-1", 0);
+        assertThat(backgroundColorOf("b")).isEqualTo(colorBefore);
+        assertThat(titleOf("b")).contains("first control: 100");
+
+        planner.moveItemToLane("b", "LANE-2");
+        assertThat(backgroundColorOf("b")).isEqualTo(colorBefore);
+        assertThat(titleOf("b")).contains("first control: 100");
+    }
+
+    private String titleOf(String itemId) {
+        return window.findDiv().withAttribute("data-item", itemId).component()
+                .getElement().getAttribute("title");
+    }
+
     private String backgroundColorOf(String itemId) {
         return window.findDiv().withAttribute("data-item", itemId).component()
                 .getStyle().get("background-color");

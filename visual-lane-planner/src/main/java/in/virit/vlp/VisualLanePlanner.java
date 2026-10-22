@@ -65,6 +65,9 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
     private static final int LANE_LABEL_WIDTH_PX = 80;
     private static final int LANE_HEIGHT_PX = 32;
     private static final int ITEM_BOX_INSET_PX = 4;
+    /** Room for an "HH:mm" tick label and some air around it. */
+    private static final int MIN_TICK_SPACING_PX = 45;
+    private static final int[] TICK_STEPS_MINUTES = {5, 10, 15, 30, 60};
 
     private static final Color LANE_TRACK_BG = NamedColor.WHITESMOKE;
     private static final Color ITEM_BORDER = NamedColor.DIMGRAY;
@@ -270,9 +273,7 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
             finalIndex = insertIndex;
         }
 
-        byLane.get(targetLaneId).add(finalIndex, new LaneItem(
-                moved.id(), targetLaneId, moved.label(),
-                moved.stepMinutes(), moved.unitCount()));
+        byLane.get(targetLaneId).add(finalIndex, moved.withLaneId(targetLaneId));
 
         plan = currentSnapshot();
         render();
@@ -343,7 +344,7 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
     // Visual sub-components — each owns its own styling and event wiring.
     // ---------------------------------------------------------------------
 
-    /** Top row with the "Time" label and the 5-minute tick marks. */
+    /** Top row with the "Time" label and the tick marks, spaced to fit the scale. */
     private class TimeAxisRow extends VHorizontalLayout {
         TimeAxisRow() {
             setSpacing(false);
@@ -363,19 +364,32 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
             style.setHeightPx(20);
             style.setFlexShrink("0");
             style.setWidthPx(spanMinutes * pixelsPerMinute);
-            for (int m = 0; m <= spanMinutes; m += 5) {
+            int step = tickStepMinutes(pixelsPerMinute);
+            for (int m = 0; m <= spanMinutes; m += step) {
                 add(new TimeTick(m));
             }
         }
     }
 
+    /** The shortest tick step whose labels don't run into each other. */
+    static int tickStepMinutes(int pixelsPerMinute) {
+        for (int step : TICK_STEPS_MINUTES) {
+            if (step * pixelsPerMinute >= MIN_TICK_SPACING_PX) {
+                return step;
+            }
+        }
+        return TICK_STEPS_MINUTES[TICK_STEPS_MINUTES.length - 1];
+    }
+
     private class TimeTick extends VSpan {
         TimeTick(int minute) {
             super(plan.origin().plusMinutes(minute).toString());
+            getElement().setAttribute("data-time-tick", "");
             VStyle style = getStyle();
             style.setPosition(Style.Position.ABSOLUTE);
             style.setLeftPx(minute * pixelsPerMinute);
             style.setFontSize("11px");
+            style.setWhiteSpace(Style.WhiteSpace.NOWRAP);
         }
     }
 
