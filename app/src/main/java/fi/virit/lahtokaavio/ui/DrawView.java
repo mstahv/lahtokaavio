@@ -26,7 +26,6 @@ import fi.virit.lahtokaavio.io.EntriesCsvReader;
 import fi.virit.lahtokaavio.io.NavisportCsvWriter;
 import fi.virit.lahtokaavio.io.NavisportLanguage;
 import fi.virit.lahtokaavio.io.StartListCsvWriter;
-import fi.virit.lahtokaavio.plan.StartPlanValidator;
 import fi.virit.lahtokaavio.plan.StartTimeDraw;
 import java.io.ByteArrayInputStream;
 import java.security.SecureRandom;
@@ -112,7 +111,7 @@ public class DrawView extends VerticalLayout implements BeforeEnterObserver {
 
     private void refresh() {
         CompetitionWorkspace workspace = CompetitionWorkspace.current();
-        planWarnings.show(new StartPlanValidator().validate(workspace.plan()));
+        planWarnings.show(workspace.planWarnings());
         List<Entry> entries = workspace.entries();
         long classes = entries.stream().map(Entry::className).distinct().count();
         entriesStatus.setText(entries.isEmpty()

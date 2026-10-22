@@ -83,8 +83,12 @@ public final class StartPlanRetimer {
                                   CompetitionParameters parameters) {
         String place = newcomer.course().startPlace().code();
         Integer firstControl = firstControl(newcomer);
+        // By the classes' courses: the user may have renamed the lanes
         List<String> atPlace = lanes.keySet().stream()
-                .filter(lane -> lane.startsWith(place + "-")).toList();
+                .filter(lane -> lanes.get(lane).stream().map(byName::get)
+                        .anyMatch(s -> place.equals(s.course().startPlace().code()))
+                        || lanes.get(lane).isEmpty() && lane.startsWith(place + "-"))
+                .toList();
         // Same first control: its runners are then spaced like the others'
         for (String lane : atPlace) {
             boolean sameControl = lanes.get(lane).stream().map(byName::get)
@@ -95,7 +99,15 @@ public final class StartPlanRetimer {
         }
         return atPlace.stream()
                 .min(Comparator.comparing(lane -> laneEnd(lane, lanes, laneStart, byName, parameters)))
-                .orElseGet(() -> place + "-" + (atPlace.size() + 1));
+                .orElseGet(() -> newLaneId(place, lanes));
+    }
+
+    private static String newLaneId(String place, Map<String, List<String>> lanes) {
+        int number = 1;
+        while (lanes.containsKey(place + "-" + number)) {
+            number++;
+        }
+        return place + "-" + number;
     }
 
     private static LocalTime laneEnd(String lane, Map<String, List<String>> lanes,

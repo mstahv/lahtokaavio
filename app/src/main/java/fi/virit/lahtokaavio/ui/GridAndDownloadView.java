@@ -13,7 +13,6 @@ import fi.virit.lahtokaavio.domain.StartPlan;
 import fi.virit.lahtokaavio.domain.WorkspaceSnapshot;
 import fi.virit.lahtokaavio.io.NavisportCsvWriter;
 import fi.virit.lahtokaavio.io.StartPlanCsvWriter;
-import fi.virit.lahtokaavio.plan.StartPlanValidator;
 import org.vaadin.firitin.appframework.MenuItem;
 import tools.jackson.databind.ObjectMapper;
 
@@ -58,7 +57,7 @@ public class GridAndDownloadView extends VerticalLayout implements BeforeEnterOb
     private void show(StartPlan plan) {
         WorkspaceSnapshot snapshot = CompetitionWorkspace.current().snapshot();
         grid.setItems(plan.seriesStarts());
-        warnings.show(new StartPlanValidator().validate(plan));
+        warnings.show(CompetitionWorkspace.current().planWarnings());
         csvDownload.setDownload(true);
         csvDownload.setHref(event -> {
             event.setContentType("text/csv");

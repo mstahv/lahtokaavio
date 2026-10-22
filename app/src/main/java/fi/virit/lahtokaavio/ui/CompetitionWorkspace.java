@@ -5,6 +5,7 @@ import fi.virit.lahtokaavio.domain.CompetitionParameters;
 import fi.virit.lahtokaavio.domain.Course;
 import fi.virit.lahtokaavio.domain.Entry;
 import fi.virit.lahtokaavio.domain.PlanReport;
+import fi.virit.lahtokaavio.domain.PlanWarning;
 import fi.virit.lahtokaavio.domain.Registrations;
 import fi.virit.lahtokaavio.domain.Series;
 import fi.virit.lahtokaavio.domain.StartDraw;
@@ -13,6 +14,7 @@ import fi.virit.lahtokaavio.domain.WorkspaceSnapshot;
 import fi.virit.lahtokaavio.plan.CourseMatcher;
 import fi.virit.lahtokaavio.plan.StartPlanGenerator;
 import fi.virit.lahtokaavio.plan.StartPlanRetimer;
+import fi.virit.lahtokaavio.plan.StartPlanValidator;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -201,6 +203,20 @@ public class CompetitionWorkspace {
         PlannedSeries planned = seriesToPlan();
         setPlan(new StartPlanRetimer().retime(plan, planned.series(), parameters));
         return planned.report();
+    }
+
+    /**
+     * The rules the current plan breaks. The start place of a class comes
+     * from its course, as the user may have renamed the lanes.
+     */
+    public List<PlanWarning> planWarnings() {
+        if (plan == null) {
+            return List.of();
+        }
+        return new StartPlanValidator().validate(plan, start ->
+                CourseMatcher.find(coursesByClass, start.seriesName())
+                        .map(course -> course.startPlace().code())
+                        .orElseGet(() -> StartPlanValidator.laneStartPlace(start)));
     }
 
     private PlannedSeries seriesToPlan() {

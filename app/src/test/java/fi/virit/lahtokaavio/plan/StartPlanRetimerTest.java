@@ -65,6 +65,18 @@ class StartPlanRetimerTest {
         assertThat(retimed.seriesStarts()).contains(start("H40", "STA1-2", 11, 11, 2, 999));
     }
 
+    @Test
+    void renamedLanesStillCountAsLanesOfTheirStartPlace() {
+        StartPlan renamed = new StartPlan(PARAMETERS, List.of(
+                start("H21", "North", 11, 0, 5, 144),
+                start("D21", "South", 11, 1, 3, 150)));
+
+        StartPlan retimed = retimer.retime(renamed, List.of(
+                series("H21", 5, 144), series("D21", 3, 150), series("H40", 2, 999)), PARAMETERS);
+
+        assertThat(retimed.seriesStarts()).contains(start("H40", "South", 11, 11, 2, 999));
+    }
+
     private static Series series(String name, int competitors, int firstControl) {
         return new Series(name, new Course(name, new StartPlace("STA1"),
                 List.of(firstControl, 200)), competitors, 2);

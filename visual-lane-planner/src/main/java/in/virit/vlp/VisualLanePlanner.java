@@ -3,7 +3,13 @@ package in.virit.vlp;
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.DetachEvent;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.contextmenu.ContextMenu;
+import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.icon.VaadinIcon;
+import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.timepicker.TimePicker;
 import com.vaadin.flow.component.contextmenu.MenuItem;
 import com.vaadin.flow.component.dnd.DragSource;
 import com.vaadin.flow.component.dnd.DropEffect;
@@ -16,6 +22,7 @@ import in.virit.color.HslColor;
 import in.virit.color.NamedColor;
 import org.vaadin.firitin.util.ResizeObserver;
 import org.vaadin.firitin.util.VStyle;
+import java.time.Duration;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -62,7 +69,7 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
     private static final int MIN_PIXELS_PER_MINUTE = 3;
     /** Wider than this would only stretch short plans. */
     private static final int MAX_PIXELS_PER_MINUTE = 40;
-    private static final int LANE_LABEL_WIDTH_PX = 80;
+    private static final int LANE_LABEL_WIDTH_PX = 120;
     private static final int LANE_HEIGHT_PX = 32;
     private static final int ITEM_BOX_INSET_PX = 4;
     /** Room for an "HH:mm" tick label and some air around it. */
@@ -179,6 +186,80 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
     }
 
     // --- Tester API -------------------------------------------------------
+
+    /** Gives a lane a new id (its name in the chart), keeping its items and start. */
+    public void renameLane(String laneId, String newLaneId) {
+        updateLane(laneId, newLaneId, laneStartOf(laneId));
+    }
+
+    /** Moves the start of a lane: its items follow, one after another as before. */
+    public void setLaneStart(String laneId, LocalTime start) {
+        updateLane(laneId, laneId, start);
+    }
+
+    /** When the first item of the lane starts, or would start. */
+    public LocalTime laneStartOf(String laneId) {
+        requireLane(laneId);
+        return plan.origin().plusMinutes(laneOffsetMinutes(laneId));
+    }
+
+    /**
+     * Renames a lane and sets its start in one go, like the lane's edit dialog
+     * does, and fires the change callback once. A start before the chart's
+     * origin moves the origin, other lanes keep their times.
+     */
+    public void updateLane(String laneId, String newLaneId, LocalTime start) {
+        requireLane(laneId);
+        Objects.requireNonNull(start);
+        String newId = Objects.requireNonNull(newLaneId).strip();
+        if (newId.isEmpty()) {
+            throw new IllegalArgumentException("Lane name can't be empty");
+        }
+        if (!newId.equals(laneId) && byLane.containsKey(newId)) {
+            throw new IllegalArgumentException("There already is a lane " + newId);
+        }
+
+        LocalTime origin = plan.origin();
+        Map<String, Integer> offsets = new LinkedHashMap<>();
+        for (String id : byLane.keySet()) {
+            offsets.put(id, laneOffsetMinutes(id));
+        }
+        int offset = (int) Duration.between(origin, start).toMinutes();
+        if (offset < 0) {
+            origin = start;
+            offsets.replaceAll((id, minutes) -> minutes - offset);
+            offsets.put(laneId, 0);
+        } else {
+            offsets.put(laneId, offset);
+        }
+
+        LinkedHashMap<String, List<LaneItem>> renamed = new LinkedHashMap<>();
+        Map<String, Integer> renamedOffsets = new LinkedHashMap<>();
+        byLane.forEach((id, items) -> {
+            String target = id.equals(laneId) ? newId : id;
+            renamed.put(target, new ArrayList<>(items.stream()
+                    .map(item -> item.withLaneId(target)).toList()));
+            renamedOffsets.put(target, offsets.get(id));
+        });
+        byLane.clear();
+        byLane.putAll(renamed);
+
+        List<LaneItem> ordered = new ArrayList<>();
+        byLane.values().forEach(ordered::addAll);
+        plan = new LanePlan(origin, plan.gapBetweenItemsInSteps(),
+                new ArrayList<>(byLane.keySet()), renamedOffsets, ordered);
+        render();
+        rescale();
+        if (onChange != null) {
+            onChange.accept(plan);
+        }
+    }
+
+    private void requireLane(String laneId) {
+        if (plan == null || !byLane.containsKey(laneId)) {
+            throw new IllegalArgumentException("Unknown lane: " + laneId);
+        }
+    }
 
     /** The warning shown on the item, or {@code null} if there is none. */
     public String warningOf(String itemId) {
@@ -420,10 +501,62 @@ public class VisualLanePlanner extends Composite<VVerticalLayout> {
             setPadding(false);
             getElement().setAttribute("data-lane", laneId);
 
-            VSpan label = new VSpan(laneId);
-            label.getStyle().setWidthPx(LANE_LABEL_WIDTH_PX);
-            label.getStyle().setFlexShrink("0");
-            add(label, new LaneTrack(laneId));
+            add(new LaneLabel(laneId), new LaneTrack(laneId));
+        }
+    }
+
+    /** The lane's name, and a small button to rename it or set its start by hand. */
+    private class LaneLabel extends VHorizontalLayout {
+        LaneLabel(String laneId) {
+            setSpacing(false);
+            setPadding(false);
+            setAlignItems(Alignment.CENTER);
+            getStyle().setWidthPx(LANE_LABEL_WIDTH_PX);
+            getStyle().setFlexShrink("0");
+            VSpan name = new VSpan(laneId);
+            name.getElement().setAttribute("title", laneId);
+            name.getStyle().setOverflow(Style.Overflow.HIDDEN);
+            name.getStyle().set("text-overflow", "ellipsis");
+            name.getStyle().setWhiteSpace(Style.WhiteSpace.NOWRAP);
+            add(name, new EditLaneButton(laneId));
+        }
+    }
+
+    private class EditLaneButton extends Button {
+        EditLaneButton(String laneId) {
+            super(VaadinIcon.PENCIL.create(), e -> new LaneEditDialog(laneId).open());
+            addThemeVariants(ButtonVariant.TERTIARY, ButtonVariant.SMALL);
+            setAriaLabel("Edit lane " + laneId);
+            setTooltipText("Rename the lane or set its start");
+            getElement().setAttribute("data-edit-lane", laneId);
+        }
+    }
+
+    /** Lane name and start; saving goes through {@link #updateLane}. */
+    private class LaneEditDialog extends Dialog {
+        private final TextField name = new TextField("Lane name");
+        private final TimePicker start = new TimePicker("First start");
+
+        LaneEditDialog(String laneId) {
+            setHeaderTitle("Lane " + laneId);
+            name.setValue(laneId);
+            name.setRequired(true);
+            start.setStep(Duration.ofMinutes(1));
+            start.setValue(laneStartOf(laneId));
+            add(new VVerticalLayout(name, start).withPadding(false));
+
+            Button save = new Button("Save", e -> {
+                try {
+                    updateLane(laneId, name.getValue(), start.getValue());
+                    close();
+                } catch (IllegalArgumentException | NullPointerException ex) {
+                    name.setInvalid(true);
+                    name.setErrorMessage(ex.getMessage() == null
+                            ? "Give the lane a name and a start" : ex.getMessage());
+                }
+            });
+            save.addThemeVariants(ButtonVariant.PRIMARY);
+            getFooter().add(new Button("Cancel", e -> close()), save);
         }
     }
 

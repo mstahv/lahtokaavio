@@ -12,7 +12,6 @@ import fi.virit.lahtokaavio.domain.CompetitionParameters;
 import fi.virit.lahtokaavio.domain.PlanWarning;
 import fi.virit.lahtokaavio.domain.SeriesStart;
 import fi.virit.lahtokaavio.domain.StartPlan;
-import fi.virit.lahtokaavio.plan.StartPlanValidator;
 import in.virit.vlp.LaneItem;
 import in.virit.vlp.LanePlan;
 import in.virit.vlp.VisualLanePlanner;
@@ -38,7 +37,6 @@ public class GanttView extends VerticalLayout implements BeforeEnterObserver {
     public static final String ROUTE = "gantt";
 
     private final VisualLanePlanner planner = new VisualLanePlanner();
-    private final StartPlanValidator validator = new StartPlanValidator();
     private final PlanWarningsPanel warnings = new PlanWarningsPanel();
     /** Side-map: series name → its course controls, used when we rebuild a StartPlan. */
     private final Map<String, List<Integer>> controlsBySeries = new LinkedHashMap<>();
@@ -48,6 +46,7 @@ public class GanttView extends VerticalLayout implements BeforeEnterObserver {
         add(new H2("Lähtökaavio"));
         add(new Paragraph(
                 "Drag a series onto another lane, or right-click (long-press) the series box. "
+                + "The pencil next to a lane renames it or sets its start by hand. "
                 + "Lanes are re-timed automatically, and the plan is checked after every "
                 + "change. Use Re-optimize from the entry view to reset to the algorithm's "
                 + "choice."));
@@ -63,18 +62,18 @@ public class GanttView extends VerticalLayout implements BeforeEnterObserver {
         }
         LanePlan lanePlan = toLanePlan(plan);
         planner.setPlan(lanePlan, this::onPlanEdited);
-        check(plan);
+        check();
     }
 
     private void onPlanEdited(LanePlan edited) {
         StartPlan rebuilt = toStartPlan(edited);
         CompetitionWorkspace.current().setPlan(rebuilt);
-        check(rebuilt);
+        check();
     }
 
     /** Lists the broken rules above the chart and outlines the classes involved. */
-    private void check(StartPlan plan) {
-        List<PlanWarning> found = validator.validate(plan);
+    private void check() {
+        List<PlanWarning> found = CompetitionWorkspace.current().planWarnings();
         warnings.show(found);
         Map<String, String> byClass = new LinkedHashMap<>();
         for (PlanWarning w : found) {

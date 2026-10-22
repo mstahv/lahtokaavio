@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
@@ -33,14 +34,24 @@ import java.util.stream.Stream;
 @org.springframework.stereotype.Component
 public final class StartPlanValidator {
 
+    /** Takes the start place from the lane id, e.g. STA1 for lane STA1-2. */
     public List<PlanWarning> validate(StartPlan plan) {
+        return validate(plan, StartPlanValidator::laneStartPlace);
+    }
+
+    /**
+     * @param startPlaceOf the start place of a class, typically from its
+     *                     course: the user may have renamed the lanes
+     */
+    public List<PlanWarning> validate(StartPlan plan, Function<SeriesStart, String> startPlaceOf) {
         List<PlanWarning> warnings = new ArrayList<>();
-        warnings.addAll(runnersToTheSameFirstControlTooClose(plan));
-        warnings.addAll(tooManyStartersAMinute(plan));
+        warnings.addAll(runnersToTheSameFirstControlTooClose(plan, startPlaceOf));
+        warnings.addAll(tooManyStartersAMinute(plan, startPlaceOf));
         return warnings;
     }
 
-    private List<PlanWarning> runnersToTheSameFirstControlTooClose(StartPlan plan) {
+    private List<PlanWarning> runnersToTheSameFirstControlTooClose(StartPlan plan,
+            Function<SeriesStart, String> startPlaceOf) {
         boolean splitting = plan.parameters().allowSplittingFirstControlGroups();
         // start place + first control → every start heading there
         Map<String, List<Start>> starts = new TreeMap<>();
@@ -48,7 +59,7 @@ public final class StartPlanValidator {
             if (s.controlCodes().isEmpty()) {
                 continue;
             }
-            String key = startPlace(s) + " to the same first control " + s.controlCodes().getFirst();
+            String key = startPlaceOf.apply(s) + " to the same first control " + s.controlCodes().getFirst();
             for (LocalTime minute : startMinutes(s)) {
                 starts.computeIfAbsent(key, k -> new ArrayList<>()).add(new Start(minute, s));
             }
@@ -91,13 +102,14 @@ public final class StartPlanValidator {
     private record Start(LocalTime minute, SeriesStart series) {
     }
 
-    private List<PlanWarning> tooManyStartersAMinute(StartPlan plan) {
+    private List<PlanWarning> tooManyStartersAMinute(StartPlan plan,
+            Function<SeriesStart, String> startPlaceOf) {
         int max = plan.parameters().maxStartersPerMinutePerStartPlace();
         // start place → minute → classes starting
         Map<String, TreeMap<LocalTime, Set<String>>> starts = new TreeMap<>();
         for (SeriesStart s : plan.seriesStarts()) {
             for (LocalTime minute : startMinutes(s)) {
-                starts.computeIfAbsent(startPlace(s), k -> new TreeMap<>())
+                starts.computeIfAbsent(startPlaceOf.apply(s), k -> new TreeMap<>())
                         .computeIfAbsent(minute, m -> new TreeSet<>()).add(s.seriesName());
             }
         }
@@ -129,7 +141,7 @@ public final class StartPlanValidator {
     }
 
     /** Lane ids are the start place code plus a lane number, e.g. STA1-2. */
-    private static String startPlace(SeriesStart s) {
+    public static String laneStartPlace(SeriesStart s) {
         int dash = s.laneId().lastIndexOf('-');
         return dash < 0 ? s.laneId() : s.laneId().substring(0, dash);
     }

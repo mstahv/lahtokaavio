@@ -109,6 +109,36 @@ class MetsasprinttiDataTest {
     }
 
     @Test
+    void organiserRenamesALaneAndMovesItsStartIntoAClash() {
+        generatePlan();
+        window.findButton().withText("OK").inside(problem()).click();
+        window.navigate(GanttView.class);
+
+        // 10 Avoin runs alone on STA1-8 after everyone else. Starting it at
+        // 12:01 puts its runners a minute from D10 and H10: same first control.
+        editLane("STA1-8", "Avoimet", LocalTime.of(12, 1));
+
+        assertThat(laneOf("10 Avoin")).isEqualTo("Avoimet");
+        assertThat(firstStartOf("10 Avoin")).isEqualTo(LocalTime.of(12, 1));
+        // Still known to start from STA1, though the lane name no longer says so
+        assertThat(window.findListItem().inside(window.find(PlanWarningsPanel.class).single())
+                .components()).extracting(ListItem::getText)
+                .anyMatch(text -> text.startsWith("10 Avoin and D10 start from STA1 to the "
+                        + "same first control 79"));
+
+        editLane("Avoimet", "Avoimet", LocalTime.of(13, 49));
+        assertThat(window.find(PlanWarningsPanel.class).exists()).isFalse();
+        assertThat(laneOf("10 Avoin")).as("the name stays").isEqualTo("Avoimet");
+    }
+
+    private void editLane(String lane, String newName, LocalTime start) {
+        window.findButton().withAriaLabel("Edit lane " + lane).click();
+        window.findTextField().withLabel("Lane name").setValue(newName);
+        window.findTimePicker().withLabel("First start").setValue(start);
+        window.findButton().withText("Save").click();
+    }
+
+    @Test
     void applyKeepsTheLanesAndTheGanttEditsWhileReoptimizeStartsOver() {
         generatePlan();
         window.findButton().withText("OK").inside(problem()).click();

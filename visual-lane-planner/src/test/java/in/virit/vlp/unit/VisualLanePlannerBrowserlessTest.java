@@ -131,6 +131,50 @@ class VisualLanePlannerBrowserlessTest {
         assertThat(titleOf("alpha")).doesNotContain("⚠");
     }
 
+    @Test
+    void laneEditDialogRenamesTheLaneAndMovesItsStart() {
+        VisualLanePlanner planner = window.navigate(BasicVisualLanePlannerUsageUI.class).getPlanner();
+
+        window.findButton().withAriaLabel("Edit lane LANE-2").click();
+        window.findTextField().withLabel("Lane name").setValue("North gate");
+        window.findTimePicker().withLabel("First start").setValue(LocalTime.of(11, 30));
+        window.findButton().withText("Save").click();
+
+        assertThat(window.findDialog().exists()).isFalse();
+        assertThat(planner.laneIds()).containsExactly("LANE-1", "North gate", "LANE-3");
+        assertThat(planner.laneOf("gamma")).isEqualTo("North gate");
+        assertThat(planner.firstStartOf("gamma")).isEqualTo(LocalTime.of(11, 30));
+        assertThat(laneTrackOf("gamma")).isEqualTo("North gate");
+        // The demo UI shows a notification for every change
+        assertThat(window.findNotification().exists()).isTrue();
+    }
+
+    @Test
+    void laneNamesStayUnique() {
+        VisualLanePlanner planner = window.navigate(BasicVisualLanePlannerUsageUI.class).getPlanner();
+
+        window.findButton().withAriaLabel("Edit lane LANE-2").click();
+        window.findTextField().withLabel("Lane name").setValue("LANE-1");
+        window.findButton().withText("Save").click();
+
+        assertThat(window.findDialog().exists()).as("stays open").isTrue();
+        assertThat(window.findTextField().withLabel("Lane name").component().getErrorMessage())
+                .isEqualTo("There already is a lane LANE-1");
+        assertThat(planner.laneIds()).containsExactly("LANE-1", "LANE-2", "LANE-3");
+    }
+
+    @Test
+    void startBeforeTheOriginKeepsTheOtherLanesInPlace() {
+        VisualLanePlanner planner = window.navigate(BasicVisualLanePlannerUsageUI.class).getPlanner();
+
+        planner.setLaneStart("LANE-3", LocalTime.of(10, 45));
+
+        assertThat(planner.firstStartOf("delta")).isEqualTo(LocalTime.of(10, 45));
+        assertThat(planner.firstStartOf("alpha")).isEqualTo(LocalTime.of(11, 0));
+        assertThat(planner.firstStartOf("beta")).isEqualTo(LocalTime.of(11, 14));
+        assertThat(planner.firstStartOf("gamma")).isEqualTo(LocalTime.of(11, 0));
+    }
+
     private String titleOf(String itemId) {
         return window.findDiv().withAttribute("data-item", itemId).component()
                 .getElement().getAttribute("title");
