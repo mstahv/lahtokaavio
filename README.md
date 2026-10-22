@@ -11,8 +11,9 @@ a start schedule.
 > [browserless-test](https://vaadin.com/docs/latest/building-apps/testing/browserless), Vaadin's
 > library for testing UIs without a browser: a real application with real
 > data and the hard parts (drag and drop, file uploads and downloads, custom
-> components) to find out what testing it takes. It works, but it is not a
-> maintained product. See
+> components) to find out what testing it takes. It is not a maintained
+> product, but it has had some real-world smoke testing: the start lists
+> of the upcoming Metsäsprintti races were planned with it. See
 > [docs/testing-custom-components.md](docs/testing-custom-components.md)
 > for what came out of it.
 
